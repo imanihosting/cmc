@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  clerkId        String?  @unique @db.VarChar(255)
+  name           String   @db.VarChar(255)
+  email          String   @unique @db.VarChar(255)
+  password       String   @db.VarChar(255)
+  role           Role
+  profilePicture String?  @db.VarChar(255)
+  experience     String?  @db.Text
+  qualifications String?  @db.Text
+  availability   Json?    // This will store availability schedule
+  serviceArea    String?  @db.VarChar(255)
+  hourlyRate     Decimal? @db.Decimal(10, 2)
+  gardaVetted    Boolean? @default(false)
+  tuslaRegistered Boolean? @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  children                  Child[]
+  parentBookings           Booking[]           @relation("ParentBookings")
+  childminderBookings      Booking[]           @relation("ChildminderBookings")
+  parentConversations      Conversation[]      @relation("ParentConversations")
+  childminderConversations Conversation[]      @relation("ChildminderConversations")
+  sentMessages             Message[]           @relation("SentMessages")
+  receivedMessages         Message[]           @relation("ReceivedMessages")
+  subscriptions            Subscription[]
+  parentReviews            Review[]            @relation("ParentReviews")
+  childminderReviews       Review[]            @relation("ChildminderReviews")
+  notifications            Notification[]
+
+  @@map("users")
+}
+
+enum Role {
+  admin
+  parent
+  childminder
+}
+
+model Child {
+  id             Int      @id @default(autoincrement())
+  parentId       Int
+  name           String   @db.VarChar(255)
+  dateOfBirth    DateTime @db.Date
+  gender         Gender
+  additionalInfo String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  parent         User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+
+  @@map("children")
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+model Booking {
+  id            Int      @id @default(autoincrement())
+  parentId      Int
+  childminderId Int
+  childId       Int
+  startTime     DateTime @db.DateTime
+  endTime       DateTime @db.DateTime
+  status        BookingStatus @default(pending)
+  additionalInfo String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  parent        User     @relation("ParentBookings", fields: [parentId], references: [id], onDelete: Cascade)
+  childminder   User     @relation("ChildminderBookings", fields: [childminderId], references: [id], onDelete: Cascade)
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  reviews       Review[]
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  pending
+  accepted
+  rejected
+  completed
+}
+
+model Conversation {
+  id            Int       @id @default(autoincrement())
+  parentId      Int
+  childminderId Int
+  startedAt     DateTime  @default(now())
+
+  // Relations
+  parent        User      @relation("ParentConversations", fields: [parentId], references: [id], onDelete: Cascade)
+  childminder   User      @relation("ChildminderConversations", fields: [childminderId], references: [id], onDelete: Cascade)
+  messages      Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  receiverId     Int
+  content        String       @db.Text
+  sentAt         DateTime     @default(now())
+
+  // Relations
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Subscription {
+  id         Int               @id @default(autoincrement())
+  userId     Int
+  planName   String           @db.VarChar(255)
+  price      Decimal          @db.Decimal(10, 2)
+  startDate  DateTime         @db.Date
+  endDate    DateTime         @db.Date
+  status     SubscriptionStatus @default(active)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  // Relations
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  active
+  inactive
+  cancelled
+  expired
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  parentId      Int
+  childminderId Int
+  bookingId     Int
+  rating        Int      @db.Int
+  review        String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  parent        User     @relation("ParentReviews", fields: [parentId], references: [id], onDelete: Cascade)
+  childminder   User     @relation("ChildminderReviews", fields: [childminderId], references: [id], onDelete: Cascade)
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  title     String          @db.VarChar(255)
+  message   String          @db.Text
+  type      NotificationType
+  isRead    Boolean         @default(false)
+  createdAt DateTime        @default(now())
+
+  // Relations
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  booking
+  message
+  subscription
+  system
+}
