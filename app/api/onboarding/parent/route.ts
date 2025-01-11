@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/clerk-sdk-node';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
@@ -31,24 +32,13 @@ export async function POST(request: Request) {
       }
     });
 
-    // Update Clerk metadata to mark onboarding as complete
-    const response = await fetch(`https://api.clerk.com/v1/users/${userId}/metadata`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        publicMetadata: {
-          role: 'parent',
-          onboardingComplete: true
-        }
-      })
+    // Update Clerk metadata using the SDK
+    await clerkClient.users.updateUser(userId, {
+      publicMetadata: {
+        role: 'parent',
+        onboardingComplete: true
+      }
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to update Clerk metadata');
-    }
 
     return NextResponse.json({ message: 'Onboarding completed successfully' });
 

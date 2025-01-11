@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/clerk-sdk-node';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
@@ -29,24 +30,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update Clerk metadata
-    const response = await fetch(`https://api.clerk.com/v1/users/${userId}/metadata`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        publicMetadata: {
-          role: role,
-          onboardingComplete: false
-        }
-      })
+    // Update Clerk metadata using the SDK
+    await clerkClient.users.updateUser(userId, {
+      publicMetadata: {
+        role: role,
+        onboardingComplete: false
+      }
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to update Clerk metadata');
-    }
 
     return NextResponse.json({ 
       message: 'Role set successfully',
