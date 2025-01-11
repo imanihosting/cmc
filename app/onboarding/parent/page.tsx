@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,59 +9,61 @@ import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export default function ParentOnboarding() {
-  const [user, setUser] = useState({ name: '', email: '' })
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [children, setChildren] = useState([{ name: '', dob: '', gender: '', additionalInfo: '' }])
 
   const addChild = () => {
     setChildren([...children, { name: '', dob: '', gender: '', additionalInfo: '' }])
   }
 
-  const handleChildChange = (index, field, value) => {
+  const handleChildChange = (index: number, field: string, value: string) => {
     const updatedChildren = [...children]
-    updatedChildren[index][field] = value
+    updatedChildren[index] = { ...updatedChildren[index], [field]: value }
     setChildren(updatedChildren)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', { user, children })
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/onboarding/parent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ children })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to complete onboarding');
+      }
+
+      // Redirect to dashboard or home page after successful onboarding
+      router.push('/');
+    } catch (error: any) {
+      console.error('Error during onboarding:', error);
+      setError(error.message || 'Failed to complete onboarding. Please try again.');
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="bg-white min-h-screen py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">Parent Onboarding</h1>
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl shadow-xl p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Basic Information</h2>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Name</Label>
-                <Input 
-                  id="name" 
-                  value={user.name} 
-                  onChange={(e) => setUser({...user, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email"
-                  value={user.email} 
-                  onChange={(e) => setUser({...user, email: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="profilePicture">Profile Picture (Optional)</Label>
-                <Input id="profilePicture" type="file" accept="image/*" />
-              </div>
-            </div>
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg">
+            {error}
           </div>
-
+        )}
+        <form onSubmit={handleSubmit} className="space-y-8">
           {children.map((child, index) => (
             <div key={index} className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl shadow-xl p-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Child Information {index + 1}</h2>
@@ -117,9 +120,22 @@ export default function ParentOnboarding() {
             </div>
           ))}
 
-          <Button type="button" onClick={addChild} className="w-full">Add Another Child</Button>
+          <Button 
+            type="button" 
+            onClick={addChild} 
+            className="w-full"
+            disabled={loading}
+          >
+            Add Another Child
+          </Button>
 
-          <Button type="submit" className="w-full">Complete Onboarding</Button>
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={loading}
+          >
+            {loading ? 'Completing Onboarding...' : 'Complete Onboarding'}
+          </Button>
         </form>
       </div>
     </div>

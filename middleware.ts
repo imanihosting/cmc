@@ -1,67 +1,81 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+// Define route matchers
 const isPublicRoute = createRouteMatcher([
-  '/',
-  '/api',
   '/about',
+  '/api/(.*)',
   '/contact',
-  '/onboarding(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
-  '/api/test-webhook(.*)',
-  '/api/webhook(.*)'
+  '/onboarding/parent',
+  '/onboarding/childminder',
+  '/role',
+  '/sign-in',
+  '/sign-up',
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  // Skip webhook routes entirely
-  if (request.nextUrl.pathname.startsWith('/api/webhooks') ||
-      request.nextUrl.pathname.startsWith('/api/test-webhook') ||
-      request.nextUrl.pathname.startsWith('/api/webhook')) {
-    return;
+const isProtectedRoute = createRouteMatcher([
+  '/portal',
+  '/portal/admin',
+  '/portal/parent',
+  '/portal/childminder',
+]);
+
+export default clerkMiddleware(async (auth, req: NextRequest) => {
+  const { userId, sessionClaims, redirectToSignIn } = await auth();
+
+  // If the route is public, allow access without further checks
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
   }
 
-  // If not a public route, protect it
-  if (!isPublicRoute(request)) {
-    await auth.protect();
+  // If the user isn't signed in and the route is protected, redirect to sign-in
+  if (!userId && isProtectedRoute(req)) {
+    return redirectToSignIn({ returnBackUrl: req.url });
   }
 
-  // If user is signed in, handle metadata and redirects
-  const { userId, sessionClaims } = auth;
-  if (userId) {
-    const metadata = sessionClaims?.unsafeMetadata as {
-      role?: string;
-      onboardingComplete?: boolean;
-    } | undefined;
+  // Check if the user has completed onboarding
+  if (
+    userId &&
+    !sessionClaims?.publicMetadata?.onboardingComplete &&
+    !isPublicRoute(req)
+  ) {
+    const onboardingUrl = new URL('/role', req.url);
+    return NextResponse.redirect(onboardingUrl);
+  }
 
-    // Skip middleware for API routes
-    if (request.nextUrl.pathname.startsWith('/api/')) {
-      return;
+  // Handle role-based access after onboarding
+  if (userId && isProtectedRoute(req)) {
+    const userRole = sessionClaims?.publicMetadata?.role;
+
+    if (!userRole) {
+      // Redirect to role selection page if role isn't defined
+      const roleSelectionUrl = new URL('/role', req.url);
+      return NextResponse.redirect(roleSelectionUrl);
     }
 
-    // If no role selected and not on role selection page,
-    // redirect to role selection
-    if (!metadata?.role && !request.nextUrl.pathname.startsWith('/sign-up/role')) {
-      return Response.redirect(new URL('/sign-up/role', request.url));
-    }
+    // Redirect users to their specific portal based on their role
+    const rolePortals: Record<string, string> = {
+      admin: '/portal/admin',
+      parent: '/portal/parent',
+      childminder: '/portal/childminder',
+    };
 
-    // If role selected but onboarding not complete,
-    // redirect to onboarding (unless already on onboarding page)
-    if (metadata?.role && !metadata?.onboardingComplete && 
-        !request.nextUrl.pathname.startsWith('/onboarding')) {
-      return Response.redirect(new URL(`/onboarding/${metadata.role.toLowerCase()}`, request.url));
-    }
-
-    // If trying to access onboarding or role pages when already onboarded,
-    // redirect to dashboard
-    if (metadata?.onboardingComplete && 
-        (request.nextUrl.pathname.startsWith('/onboarding') || 
-         request.nextUrl.pathname === '/sign-up/role')) {
-      return Response.redirect(new URL(`/dashboard/${metadata.role?.toLowerCase()}`, request.url));
+    const portalUrl = rolePortals[userRole];
+    if (portalUrl && req.nextUrl.pathname !== portalUrl) {
+      return NextResponse.redirect(new URL(portalUrl, req.url));
     }
   }
+
+  // Allow access if none of the above conditions are met
+  return NextResponse.next();
 });
 
+// Match configuration to skip internal and static files
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: [
+    // Skip Next.js internals and all static files
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
 };

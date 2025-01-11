@@ -16,6 +16,7 @@ export default function RoleSelection() {
       setLoading(true)
       setError(null)
 
+      // First, update the user's role
       const response = await fetch('/api/role', {
         method: 'POST',
         headers: {
@@ -24,15 +25,17 @@ export default function RoleSelection() {
         body: JSON.stringify({ role })
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
+        const data = await response.json();
         throw new Error(data.error || 'Failed to set role');
       }
 
-      // Redirect to the appropriate onboarding page
-      router.push(`/onboarding/${role}`);
-      
+      // If role is set successfully, redirect to the appropriate onboarding page
+      if (role === 'parent') {
+        router.push('/onboarding/parent');
+      } else {
+        router.push('/onboarding/childminder');
+      }
     } catch (error: any) {
       console.error('Error setting role:', error);
       setError(error.message || 'Failed to set role. Please try again.');
