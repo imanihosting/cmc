@@ -1,5 +1,20 @@
 
 START SPECIFICATION:
+
+# Very Important 
+- We just fixed role onbording redirects to work please do not touch it 
+- Do not change the theme of the website 
+- Do not change the layout of the website 
+- Do not change the colors of the website 
+- Do not change the fonts of the website 
+- Do not change the images of the website 
+- Do not change the icons of the website 
+- Do not change the animations of the website 
+- Do not change the transitions of the website 
+- Do not change the hover effects of the website 
+- Do not change the active effects of the website
+- Remember Clerk Authentication is used for the website please do not alter it 
+- Remember Clerk Middleware is used for the website please do not alter it 
 # Technical Specification
 
 ## System Overview

@@ -1,61 +1,55 @@
 'use client'
 
 import { Baby, Users } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth, useUser } from '@clerk/nextjs'
+import { Button } from '@/components/ui/button'
 
-export default function RoleSelection() {
+export default function RoleSelectionPage() {
   const router = useRouter()
   const { isLoaded, userId } = useAuth()
+  const { user } = useUser()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Handle auth redirects in useEffect
-  useEffect(() => {
-    if (isLoaded && !userId) {
-      router.push('/sign-in')
-    }
-  }, [isLoaded, userId, router])
+  const handleRoleSelect = async (selectedRole: string) => {
+    setLoading(true)
+    setError(null)
 
-  // Return null while checking auth
-  if (!isLoaded || !userId) {
-    return null
-  }
-
-  const handleRoleSelect = async (role: 'parent' | 'childminder') => {
     try {
-      setLoading(true)
-      setError(null)
-
       const response = await fetch('/api/role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ role })
-      });
+        body: JSON.stringify({ role: selectedRole }),
+      })
+
+      const data = await response.json()
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to set role');
+        throw new Error(data.error || 'Failed to set role')
       }
 
-      // Wait for a moment to ensure role is set
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Use router.push for navigation
-      if (role === 'parent') {
-        router.push('/onboarding/parent');
-      } else {
-        router.push('/onboarding/childminder');
+      // Force a session refresh
+      if (data.requiresRefresh) {
+        await user?.reload()
       }
+
+      // Redirect to onboarding
+      router.push(`/onboarding/${selectedRole}`)
     } catch (error: any) {
-      console.error('Error setting role:', error);
-      setError(error.message || 'Failed to set role. Please try again.');
+      console.error('Error selecting role:', error)
+      setError(error.message || 'Failed to set role')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Return null while checking auth
+  if (!isLoaded || !userId) {
+    return null
   }
 
   return (

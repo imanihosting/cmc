@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth, useUser } from '@clerk/nextjs'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 export default function ChildminderOnboarding() {
   const router = useRouter()
   const { isLoaded, userId } = useAuth()
+  const { user } = useUser()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -24,16 +25,11 @@ export default function ChildminderOnboarding() {
     tuslaRegistered: false
   })
 
-  // Add auth check effect
   useEffect(() => {
     if (isLoaded && !userId) {
-      router.push('/sign-in');
+      router.push('/sign-in')
     }
-  }, [isLoaded, userId, router]);
-
-  if (!isLoaded || !userId) {
-    return null;
-  }
+  }, [isLoaded, userId, router])
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -45,34 +41,59 @@ export default function ChildminderOnboarding() {
     setError(null)
 
     try {
+      console.log('Submitting childminder onboarding form...')
       const response = await fetch('/api/onboarding/childminder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData)
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to complete onboarding');
+        throw new Error(data.error || 'Failed to complete onboarding')
       }
 
-      console.log('Childminder onboarding successful, waiting for metadata update...');
+      console.log('Childminder onboarding API call successful')
       
-      // Add delay to ensure Clerk metadata is updated
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Add longer delay and retry mechanism to ensure Clerk metadata is updated
+      let retries = 0
+      const maxRetries = 5
       
-      console.log('Redirecting to childminder portal...');
-      router.push('/portal/childminder');
+      while (retries < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+        
+        // Force a session refresh
+        await user?.reload()
+        
+        // Check if metadata is updated
+        const metadata = user?.publicMetadata
+        console.log('Current metadata:', metadata)
+        
+        if (metadata?.onboardingComplete) {
+          console.log('Metadata confirmed updated, proceeding with redirection...')
+          window.location.href = '/portal/childminder'
+          return
+        }
+        
+        retries++
+        console.log(`Metadata not yet updated. Attempt ${retries}/${maxRetries}`)
+      }
+      
+      throw new Error('Onboarding completed but metadata update timed out. Please try refreshing the page.')
 
     } catch (error: any) {
-      console.error('Error during onboarding:', error);
-      setError(error.message || 'Failed to complete onboarding. Please try again.');
+      console.error('Error during onboarding:', error)
+      setError(error.message || 'Failed to complete onboarding')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (!isLoaded || !userId) {
+    return null
   }
 
   return (

@@ -75,7 +75,73 @@ export default function RootLayout({
           </main>
 
           <footer className="bg-white py-16">
-            {/* Footer content */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="bg-[#0f172a] rounded-3xl shadow-xl overflow-hidden">
+                <div className="px-8 py-16 sm:p-16 text-gray-400">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="space-y-4">
+                      <Link 
+                        href="/" 
+                        className="flex items-center space-x-2 text-xl font-bold"
+                      >
+                        <Baby className="h-6 w-6 text-violet-400" />
+                        <span className="text-white">ChildMinderConnect</span>
+                      </Link>
+                      <p className="text-sm">
+                        Connecting families with trusted childcare professionals in your area.
+                      </p>
+                      <div className="flex space-x-4">
+                        {/* Social media icons */}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-semibold mb-4 font-poppins">Quick Links</h3>
+                      <ul className="space-y-2">
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">How it Works</Link></li>
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">Features</Link></li>
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">Testimonials</Link></li>
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">Pricing</Link></li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-semibold mb-4 font-poppins">Support</h3>
+                      <ul className="space-y-2">
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">Privacy Policy</Link></li>
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">Terms of Service</Link></li>
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">FAQ</Link></li>
+                        <li><Link href="#" className="hover:text-violet-400 transition-colors font-poppins">Contact</Link></li>
+                      </ul>
+                    </div>
+
+                    <div>
+                      <h3 className="text-white font-semibold mb-4 font-poppins">Stay Updated</h3>
+                      <p className="text-sm mb-4">
+                        Subscribe to our newsletter for the latest updates and childcare tips.
+                      </p>
+                      <form className="space-y-2">
+                        <input
+                          type="email"
+                          placeholder="Enter your email"
+                          className="w-full px-4 py-2 rounded-md bg-gray-800 border border-gray-700 focus:outline-none focus:border-violet-400 transition-colors font-poppins"
+                        />
+                        <button
+                          type="submit"
+                          className="w-full bg-violet-600 text-white px-4 py-2 rounded-md hover:bg-violet-500 transform hover:scale-105 transition-all duration-300 font-poppins font-medium"
+                        >
+                          Subscribe
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-8 border-t border-gray-800 text-sm text-center">
+                    <p>&copy; {new Date().getFullYear()} ChildMinderConnect. All rights reserved.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </footer>
         </body>
       </html>

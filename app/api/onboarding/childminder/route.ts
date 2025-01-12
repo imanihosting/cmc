@@ -6,47 +6,57 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     const { userId } = await auth();
-
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await request.json();
-
+    const formData = await request.json();
+    
     // Update user in database
     await prisma.user.update({
       where: { clerkId: userId },
       data: {
-        name: data.name,
-        email: data.email,
-        experience: data.experience || null,
-        qualifications: data.qualifications || null,
-        availability: data.availability || null,
-        serviceArea: data.serviceArea || null,
-        hourlyRate: data.hourlyRate ? parseFloat(data.hourlyRate) : null,
-        gardaVetted: data.gardaVetted || false,
-        tuslaRegistered: data.tuslaRegistered || false
+        experience: formData.experience || null,
+        qualifications: formData.qualifications || null,
+        availability: formData.availability || null,
+        serviceArea: formData.serviceArea || null,
+        hourlyRate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
+        gardaVetted: formData.gardaVetted || false,
+        tuslaRegistered: formData.tuslaRegistered || false
       }
     });
 
-    // Update Clerk metadata using the SDK
-    const userFromClerk = await clerkClient.users.getUser(userId);
-    console.log('Before childminder onboarding, onboardingComplete:', userFromClerk.publicMetadata.onboardingComplete);
+    console.log('Before childminder onboarding, onboardingComplete:', false);
+    
+    // Update Clerk metadata
     await clerkClient.users.updateUser(userId, {
       publicMetadata: {
-        role: 'childminder',
-        onboardingComplete: true
+        onboardingComplete: true,
+        role: 'childminder' // Preserve the role while updating onboardingComplete
       }
     });
-    const updatedUserFromClerk = await clerkClient.users.getUser(userId);
-    console.log('After childminder onboarding, onboardingComplete:', updatedUserFromClerk.publicMetadata.onboardingComplete);
 
-    return NextResponse.json({ message: 'Onboarding completed successfully' });
+    console.log('After childminder onboarding, onboardingComplete:', true);
+
+    // Set cookie to force client-side session refresh
+    const response = NextResponse.json({ 
+      message: 'Childminder onboarding completed successfully',
+      requiresRefresh: true
+    });
+
+    response.cookies.set('clerk-force-refresh', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 // 1 minute
+    });
+
+    return response;
 
   } catch (error) {
-    console.error('Error in childminder onboarding:', error);
+    console.error('Error during childminder onboarding:', error);
     return NextResponse.json(
-      { error: 'Failed to complete onboarding' },
+      { error: 'Failed to complete childminder onboarding' },
       { status: 500 }
     );
   }
