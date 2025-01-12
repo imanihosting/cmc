@@ -152,6 +152,7 @@ model Subscription {
 }
 
 enum SubscriptionStatus {
+  pending
   active
   inactive
   cancelled

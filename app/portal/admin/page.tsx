@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { redirect } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"

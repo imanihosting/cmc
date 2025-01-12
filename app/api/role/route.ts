@@ -31,12 +31,21 @@ export async function POST(request: NextRequest) {
     });
 
     // Update Clerk metadata using the SDK
-    await clerkClient.users.updateUser(userId, {
-      publicMetadata: {
-        role: role,
-        onboardingComplete: false
-      }
-    });
+    const userFromClerk = await clerkClient.users.getUser(userId);
+    if (!userFromClerk.publicMetadata.role) {
+      await clerkClient.users.updateUser(userId, {
+        publicMetadata: {
+          role: role,
+          onboardingComplete: false
+        }
+      });
+    } else {
+      await clerkClient.users.updateUser(userId, {
+        publicMetadata: {
+          role: role,
+        }
+      });
+    }
 
     return NextResponse.json({ 
       message: 'Role set successfully',
@@ -50,4 +59,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

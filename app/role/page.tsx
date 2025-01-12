@@ -1,7 +1,7 @@
-"use client"
+'use client'
 
 import { Baby, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 
@@ -11,12 +11,23 @@ export default function RoleSelection() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Handle auth redirects in useEffect
+  useEffect(() => {
+    if (isLoaded && !userId) {
+      router.push('/sign-in')
+    }
+  }, [isLoaded, userId, router])
+
+  // Return null while checking auth
+  if (!isLoaded || !userId) {
+    return null
+  }
+
   const handleRoleSelect = async (role: 'parent' | 'childminder') => {
     try {
       setLoading(true)
       setError(null)
 
-      // First, update the user's role
       const response = await fetch('/api/role', {
         method: 'POST',
         headers: {
@@ -30,7 +41,10 @@ export default function RoleSelection() {
         throw new Error(data.error || 'Failed to set role');
       }
 
-      // If role is set successfully, redirect to the appropriate onboarding page
+      // Wait for a moment to ensure role is set
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Use router.push for navigation
       if (role === 'parent') {
         router.push('/onboarding/parent');
       } else {
@@ -42,15 +56,6 @@ export default function RoleSelection() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!isLoaded) {
-    return null;
-  }
-
-  if (!userId) {
-    router.push('/sign-in');
-    return null;
   }
 
   return (

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@clerk/nextjs'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +11,7 @@ import { Switch } from "@/components/ui/switch"
 
 export default function ChildminderOnboarding() {
   const router = useRouter()
+  const { isLoaded, userId } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -21,6 +23,17 @@ export default function ChildminderOnboarding() {
     gardaVetted: false,
     tuslaRegistered: false
   })
+
+  // Add auth check effect
+  useEffect(() => {
+    if (isLoaded && !userId) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, userId, router]);
+
+  if (!isLoaded || !userId) {
+    return null;
+  }
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -46,8 +59,14 @@ export default function ChildminderOnboarding() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      // Redirect to dashboard or home page after successful onboarding
-      router.push('/');
+      console.log('Childminder onboarding successful, waiting for metadata update...');
+      
+      // Add delay to ensure Clerk metadata is updated
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log('Redirecting to childminder portal...');
+      router.push('/portal/childminder');
+
     } catch (error: any) {
       console.error('Error during onboarding:', error);
       setError(error.message || 'Failed to complete onboarding. Please try again.');
@@ -154,4 +173,3 @@ export default function ChildminderOnboarding() {
     </div>
   )
 }
-

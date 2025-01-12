@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const bookings = await prisma.booking.findMany({
+    const conversations = await prisma.conversation.findMany({
       include: {
         parent: {
           select: {
@@ -19,33 +19,38 @@ export async function GET() {
             email: true,
           },
         },
-        child: {
+        messages: {
           select: {
             id: true,
-            name: true,
-            dateOfBirth: true,
+            content: true,
+            sentAt: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
+          orderBy: {
+            sentAt: 'desc',
+          },
+          take: 10, // Get last 10 messages
         },
       },
     });
-    return NextResponse.json(bookings);
+    return NextResponse.json(conversations);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const booking = await prisma.booking.create({
+    const conversation = await prisma.conversation.create({
       data: {
         parentId: body.parentId,
         childminderId: body.childminderId,
-        childId: body.childId,
-        startTime: new Date(body.startTime),
-        endTime: new Date(body.endTime),
-        status: body.status || 'pending',
-        additionalInfo: body.additionalInfo,
       },
       include: {
         parent: {
@@ -60,15 +65,10 @@ export async function POST(request: Request) {
             email: true,
           },
         },
-        child: {
-          select: {
-            name: true,
-          },
-        },
       },
     });
-    return NextResponse.json(booking);
+    return NextResponse.json(conversation);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
   }
 } 

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { redirect } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -41,7 +43,30 @@ const notifications = [
 const AnimatedCard = motion(Card)
 
 export default function ParentDashboard() {
+  const { isLoaded, user } = useUser();
   const [activeTab, setActiveTab] = useState('dashboard')
+
+  // Check authentication and role
+  if (!isLoaded) {
+    return null; // or loading spinner
+  }
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const userRole = user.publicMetadata.role as string;
+  const onboardingComplete = user.publicMetadata.onboardingComplete as boolean;
+
+  console.log('Parent portal, onboardingComplete:', onboardingComplete);
+
+  if (userRole !== 'parent') {
+    redirect('/portal/' + userRole);
+  }
+
+  if (!onboardingComplete) {
+    redirect('/onboarding/parent');
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">

@@ -33,12 +33,16 @@ export async function POST(request: Request) {
     });
 
     // Update Clerk metadata using the SDK
+    const userFromClerk = await clerkClient.users.getUser(userId);
+    console.log('Before parent onboarding, onboardingComplete:', userFromClerk.publicMetadata.onboardingComplete);
     await clerkClient.users.updateUser(userId, {
       publicMetadata: {
         role: 'parent',
         onboardingComplete: true
       }
     });
+    const updatedUserFromClerk = await clerkClient.users.getUser(userId);
+    console.log('After parent onboarding, onboardingComplete:', updatedUserFromClerk.publicMetadata.onboardingComplete);
 
     return NextResponse.json({ message: 'Onboarding completed successfully' });
 
@@ -49,4 +53,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useUser } from '@clerk/nextjs'
+import { redirect } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -40,6 +42,30 @@ const recentMessages = [
 const AnimatedCard = motion(Card)
 
 export default function ChildminderDashboard() {
+  const { isLoaded, user } = useUser();
+
+  // Check authentication and role
+  if (!isLoaded) {
+    return null; // or loading spinner
+  }
+
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const userRole = user.publicMetadata.role as string;
+  const onboardingComplete = user.publicMetadata.onboardingComplete as boolean;
+
+  console.log('Childminder portal, onboardingComplete:', onboardingComplete);
+
+  if (userRole !== 'childminder') {
+    redirect('/portal/' + userRole);
+  }
+
+  if (!onboardingComplete) {
+    redirect('/onboarding/childminder');
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 p-8">
       <div className="max-w-7xl mx-auto">

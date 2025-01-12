@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@clerk/nextjs'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,9 +11,21 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export default function ParentOnboarding() {
   const router = useRouter()
+  const { isLoaded, userId } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [children, setChildren] = useState([{ name: '', dob: '', gender: '', additionalInfo: '' }])
+
+  // Add auth check effect
+  useEffect(() => {
+    if (isLoaded && !userId) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, userId, router]);
+
+  if (!isLoaded || !userId) {
+    return null;
+  }
 
   const addChild = () => {
     setChildren([...children, { name: '', dob: '', gender: '', additionalInfo: '' }])
@@ -44,8 +57,14 @@ export default function ParentOnboarding() {
         throw new Error(data.error || 'Failed to complete onboarding');
       }
 
-      // Redirect to dashboard or home page after successful onboarding
-      router.push('/');
+      console.log('Parent onboarding successful, waiting for metadata update...');
+      
+      // Add delay to ensure Clerk metadata is updated
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log('Redirecting to parent portal...');
+      router.push('/portal/parent');
+
     } catch (error: any) {
       console.error('Error during onboarding:', error);
       setError(error.message || 'Failed to complete onboarding. Please try again.');
@@ -141,4 +160,3 @@ export default function ParentOnboarding() {
     </div>
   )
 }
-

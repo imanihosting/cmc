@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const bookings = await prisma.booking.findMany({
+    const { searchParams } = new URL(request.url);
+    const childminderId = searchParams.get('childminderId');
+
+    const where = childminderId ? { childminderId: parseInt(childminderId) } : {};
+
+    const reviews = await prisma.review.findMany({
+      where,
       include: {
         parent: {
           select: {
@@ -19,33 +25,34 @@ export async function GET() {
             email: true,
           },
         },
-        child: {
+        booking: {
           select: {
             id: true,
-            name: true,
-            dateOfBirth: true,
+            startTime: true,
+            endTime: true,
           },
         },
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
-    return NextResponse.json(bookings);
+    return NextResponse.json(reviews);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const booking = await prisma.booking.create({
+    const review = await prisma.review.create({
       data: {
         parentId: body.parentId,
         childminderId: body.childminderId,
-        childId: body.childId,
-        startTime: new Date(body.startTime),
-        endTime: new Date(body.endTime),
-        status: body.status || 'pending',
-        additionalInfo: body.additionalInfo,
+        bookingId: body.bookingId,
+        rating: body.rating,
+        review: body.review,
       },
       include: {
         parent: {
@@ -60,15 +67,16 @@ export async function POST(request: Request) {
             email: true,
           },
         },
-        child: {
+        booking: {
           select: {
-            name: true,
+            startTime: true,
+            endTime: true,
           },
         },
       },
     });
-    return NextResponse.json(booking);
+    return NextResponse.json(review);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create review' }, { status: 500 });
   }
 } 
