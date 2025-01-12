@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { redirect } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -52,7 +51,8 @@ export default function ParentDashboard() {
   }
 
   if (!user) {
-    redirect('/sign-in');
+    window.location.href = '/sign-in';
+    return null;
   }
 
   const userRole = user.publicMetadata.role as string;
@@ -61,11 +61,13 @@ export default function ParentDashboard() {
   console.log('Parent portal, onboardingComplete:', onboardingComplete);
 
   if (userRole !== 'parent') {
-    redirect('/portal/' + userRole);
+    window.location.href = '/portal/' + userRole;
+    return null;
   }
 
   if (!onboardingComplete) {
-    redirect('/onboarding/parent');
+    window.location.href = '/onboarding/parent';
+    return null;
   }
 
   return (

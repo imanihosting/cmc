@@ -2,13 +2,11 @@
 
 import { useState } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { redirect } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { CalendarDays, MessageCircle, Star, Bell, Users, BookOpen, ChevronRight, Mail, CheckCircle, XCircle, Clock, Euro } from 'lucide-react'
 
 // Mock data
@@ -50,7 +48,8 @@ export default function ChildminderDashboard() {
   }
 
   if (!user) {
-    redirect('/sign-in');
+    window.location.href = '/sign-in';
+    return null;
   }
 
   const userRole = user.publicMetadata.role as string;
@@ -59,11 +58,13 @@ export default function ChildminderDashboard() {
   console.log('Childminder portal, onboardingComplete:', onboardingComplete);
 
   if (userRole !== 'childminder') {
-    redirect('/portal/' + userRole);
+    window.location.href = '/portal/' + userRole;
+    return null;
   }
 
   if (!onboardingComplete) {
-    redirect('/onboarding/childminder');
+    window.location.href = '/onboarding/childminder';
+    return null;
   }
 
   return (
