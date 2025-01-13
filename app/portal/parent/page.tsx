@@ -384,7 +384,14 @@ export default function ParentDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = `/portal/children/${child.id}`}>Update</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-purple-50 dark:hover:bg-purple-900" 
+                      onClick={() => window.location.href = '/portal/parent/children'}
+                    >
+                      Update
+                    </Button>
                   </div>
                 ))}
                 {children.length === 0 && (
