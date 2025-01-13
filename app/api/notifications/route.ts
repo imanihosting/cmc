@@ -1,39 +1,42 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { NotificationType } from '@prisma/client';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const unreadOnly = searchParams.get('unreadOnly') === 'true';
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    const session = await auth();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId: session.userId },
+      select: { id: true }
+    });
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const unreadOnly = searchParams.get('unreadOnly') === 'true';
+
     const where = {
-      userId: parseInt(userId),
+      userId: dbUser.id,
       ...(unreadOnly ? { isRead: false } : {}),
     };
 
     const notifications = await prisma.notification.findMany({
       where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
       orderBy: {
         createdAt: 'desc',
       },
     });
+    
     return NextResponse.json(notifications);
   } catch (error) {
+    console.error('Error in notifications GET endpoint:', error);
     return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
   }
 }

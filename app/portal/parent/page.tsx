@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,46 +8,137 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { CalendarDays, MessageCircle, Star, Bell, Users, BookOpen, ChevronRight, Mail } from 'lucide-react'
+import { format, formatDistanceToNow } from 'date-fns'
 
-// Mock data
-const quickStats = [
-  { title: 'Active Bookings', value: 3, icon: BookOpen },
-  { title: 'Registered Children', value: 2, icon: Users },
-  { title: 'Unread Messages', value: 5, icon: Mail },
-  { title: 'Reviews Given', value: 8, icon: Star },
-]
+interface Booking {
+  id: number
+  childminder: { name: string }
+  startTime: string
+  endTime: string
+  child: { name: string }
+  status: string
+}
 
-const upcomingBookings = [
-  { id: 1, childminder: 'Sarah Johnson', date: '2023-07-20', time: '09:00 AM - 05:00 PM', child: 'Emma', status: 'Confirmed' },
-  { id: 2, childminder: 'Michael Brown', date: '2023-07-22', time: '08:00 AM - 04:00 PM', child: 'Liam', status: 'Pending' },
-  { id: 3, childminder: 'Emily Davis', date: '2023-07-25', time: '10:00 AM - 06:00 PM', child: 'Emma', status: 'Confirmed' },
-]
+interface Child {
+  id: number
+  name: string
+  dateOfBirth: string
+}
 
-const children = [
-  { id: 1, name: 'Emma', age: 4, image: '/placeholder.svg' },
-  { id: 2, name: 'Liam', age: 2, image: '/placeholder.svg' },
-]
+interface Message {
+  id: number
+  sender: { 
+    id: number
+    name: string 
+  }
+  content: string
+  sentAt: string
+  read: boolean
+}
 
-const recentMessages = [
-  { id: 1, sender: 'Sarah Johnson', message: 'Hi! Just confirming our appointment for tomorrow.', time: '2 hours ago' },
-  { id: 2, sender: 'Michael Brown', message: 'Thank you for booking with me. I look forward to meeting Liam.', time: '1 day ago' },
-]
-
-const notifications = [
-  { id: 1, type: 'system', message: 'New feature: Video chat is now available!', time: '1 hour ago' },
-  { id: 2, type: 'booking', message: 'Your booking with Sarah Johnson has been confirmed.', time: '3 hours ago' },
-  { id: 3, type: 'subscription', message: 'Your subscription will renew in 3 days.', time: '1 day ago' },
-]
+interface Notification {
+  id: number
+  type: string
+  message: string
+  createdAt: string
+}
 
 const AnimatedCard = motion(Card)
 
 export default function ParentDashboard() {
   const { isLoaded, user } = useUser();
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [children, setChildren] = useState<Child[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true)
+        
+        // Fetch bookings
+        const bookingsRes = await fetch('/api/bookings')
+        const bookingsData = await bookingsRes.json()
+        if (Array.isArray(bookingsData)) {
+          setBookings(bookingsData)
+        } else {
+          console.error('Bookings data is not an array:', bookingsData)
+          setBookings([])
+        }
+
+        // Fetch children
+        const childrenRes = await fetch('/api/children')
+        const childrenData = await childrenRes.json()
+        if (Array.isArray(childrenData)) {
+          setChildren(childrenData)
+        } else {
+          console.error('Children data is not an array:', childrenData)
+          setChildren([])
+        }
+
+        // Fetch conversations first
+        const conversationsRes = await fetch('/api/conversations')
+        const conversationsData = await conversationsRes.json()
+        
+        if (Array.isArray(conversationsData)) {
+          // Fetch messages for each conversation
+          const allMessages: Message[] = []
+          for (const conversation of conversationsData) {
+            const messagesRes = await fetch(`/api/messages?conversationId=${conversation.id}`)
+            const messagesData = await messagesRes.json()
+            if (Array.isArray(messagesData)) {
+              allMessages.push(...messagesData)
+            }
+          }
+          setMessages(allMessages)
+        } else {
+          console.error('Conversations data is not an array:', conversationsData)
+          setMessages([])
+        }
+
+        // Fetch notifications
+        const notificationsRes = await fetch('/api/notifications')
+        if (!notificationsRes.ok) {
+          const errorData = await notificationsRes.json()
+          console.error('Failed to fetch notifications:', errorData)
+          setNotifications([])
+        } else {
+          const notificationsData = await notificationsRes.json()
+          if (Array.isArray(notificationsData)) {
+            setNotifications(notificationsData)
+          } else {
+            console.error('Notifications data is not an array:', notificationsData)
+            setNotifications([])
+          }
+        }
+
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err)
+        setError('Failed to load dashboard data')
+        // Initialize empty arrays on error
+        setBookings([])
+        setChildren([])
+        setMessages([])
+        setNotifications([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (isLoaded && user) {
+      fetchDashboardData()
+    }
+  }, [isLoaded, user])
 
   // Check authentication and role
   if (!isLoaded) {
-    return null; // or loading spinner
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
 
   if (!user) {
@@ -58,8 +149,6 @@ export default function ParentDashboard() {
   const userRole = user.publicMetadata.role as string;
   const onboardingComplete = user.publicMetadata.onboardingComplete as boolean;
 
-  console.log('Parent portal, onboardingComplete:', onboardingComplete);
-
   if (userRole !== 'parent') {
     window.location.href = '/portal/' + userRole;
     return null;
@@ -69,6 +158,34 @@ export default function ParentDashboard() {
     window.location.href = '/onboarding/parent';
     return null;
   }
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading dashboard data...</div>
+  }
+
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>
+  }
+
+  const quickStats = [
+    { title: 'Active Bookings', value: bookings.filter(b => b.status === 'accepted').length, icon: BookOpen },
+    { title: 'Registered Children', value: children.length, icon: Users },
+    { title: 'Unread Messages', value: messages.filter(m => !m.read).length, icon: Mail },
+    { title: 'Reviews Given', value: bookings.filter(b => b.status === 'completed').length, icon: Star },
+  ]
+
+  const upcomingBookings = bookings
+    .filter(b => b.status === 'accepted' || b.status === 'pending')
+    .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+    .slice(0, 3)
+
+  const recentMessages = messages
+    .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
+    .slice(0, 2)
+    .map(msg => ({
+      ...msg,
+      time: formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })
+    }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
@@ -108,26 +225,31 @@ export default function ParentDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Upcoming Bookings</span>
-                <Button variant="ghost" size="sm">View All</Button>
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/bookings'}>View All</Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {upcomingBookings.map((booking, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                {upcomingBookings.map((booking) => (
+                  <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center space-x-4">
                       <CalendarDays className="h-10 w-10 text-purple-500" />
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{booking.childminder}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{booking.date} • {booking.time}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Child: {booking.child}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white">{booking.childminder.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {format(new Date(booking.startTime), 'PPP')} • {format(new Date(booking.startTime), 'p')} - {format(new Date(booking.endTime), 'p')}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Child: {booking.child.name}</p>
                       </div>
                     </div>
-                    <Badge variant={booking.status === 'Confirmed' ? 'default' : 'secondary'}>
-                      {booking.status}
+                    <Badge variant={booking.status === 'accepted' ? 'default' : 'secondary'}>
+                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                     </Badge>
                   </div>
                 ))}
+                {upcomingBookings.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">No upcoming bookings</div>
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
@@ -141,26 +263,30 @@ export default function ParentDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Children Profiles</span>
-                <Button variant="ghost" size="sm">Manage</Button>
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/children'}>Manage</Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {children.map((child, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                {children.map((child) => (
+                  <div key={child.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="flex items-center space-x-4">
                       <Avatar>
-                        <AvatarImage src={child.image} alt={child.name} />
                         <AvatarFallback>{child.name[0]}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-semibold text-gray-900 dark:text-white">{child.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Age: {child.age}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Age: {Math.floor((new Date().getTime() - new Date(child.dateOfBirth).getTime()) / 31557600000)}
+                        </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">Update</Button>
+                    <Button variant="outline" size="sm" onClick={() => window.location.href = `/portal/children/${child.id}`}>Update</Button>
                   </div>
                 ))}
+                {children.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">No children registered</div>
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
@@ -174,24 +300,27 @@ export default function ParentDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Recent Messages</span>
-                <Button variant="ghost" size="sm">View All</Button>
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/messages'}>View All</Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentMessages.map((message, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                {recentMessages.map((message) => (
+                  <div key={message.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <Avatar>
-                      <AvatarFallback>{message.sender[0]}</AvatarFallback>
+                      <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1">
-                      <p className="font-semibold text-gray-900 dark:text-white">{message.sender}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{message.message}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{message.sender.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{message.content}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
                     </div>
-                    <Button variant="outline" size="sm">Reply</Button>
+                    <Button variant="outline" size="sm" onClick={() => window.location.href = `/portal/messages/${message.sender.id}`}>Reply</Button>
                   </div>
                 ))}
+                {messages.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">No messages</div>
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
@@ -205,13 +334,13 @@ export default function ParentDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Notifications</span>
-                <Button variant="ghost" size="sm">Clear All</Button>
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/notifications'}>View All</Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {notifications.map((notification, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                {notifications.map((notification) => (
+                  <div key={notification.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full">
                       {notification.type === 'system' && <Bell className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
                       {notification.type === 'booking' && <CalendarDays className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
@@ -219,11 +348,16 @@ export default function ParentDashboard() {
                     </div>
                     <div className="flex-1 space-y-1">
                       <p className="text-sm text-gray-900 dark:text-white">{notification.message}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{notification.time}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                      </p>
                     </div>
                     <ChevronRight className="h-5 w-5 text-gray-400" />
                   </div>
                 ))}
+                {notifications.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">No notifications</div>
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
