@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Search, CheckCircle, Baby, Euro } from 'lucide-react'
+import { SmartSearch } from '@/components/search/SmartSearch'
 
 const testimonials = [
   {
@@ -24,6 +25,12 @@ const testimonials = [
 ];
 
 export default function Home() {
+  const handleSearch = async (filters: any) => {
+    'use server'
+    // This will be handled by the matching API
+    console.log('Search filters:', filters);
+  };
+
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -39,47 +46,41 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mt-6 text-xl text-gray-200 mb-8 max-w-3xl mx-auto">
-                Easily find trusted childminders near you to care for your little ones. 
-                Subscribe to unlock full access to our verified childminders network.
+                Find your perfect childminder match with our smart matching system. 
+                Filter by location, personality, availability, and more.
               </p>
 
               <div className="max-w-2xl mx-auto mb-8">
-                <div className="flex gap-2 p-2 bg-white/10 backdrop-blur-sm rounded-full">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input 
-                      type="text"
-                      placeholder="Search by location or keyword"
-                      className="w-full pl-10 pr-4 py-3 bg-white rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
-                    />
-                  </div>
-                  <button className="px-6 py-3 bg-violet-500 hover:bg-violet-400 text-white rounded-full transition-all duration-300 transform hover:scale-105">
-                    Search
-                  </button>
-                </div>
+                <SmartSearch onSearch={handleSearch} />
               </div>
 
               <div className="flex flex-wrap justify-center gap-4 mb-12">
-                <button className="px-8 py-3 bg-violet-500 hover:bg-violet-400 text-white rounded-full transition-all duration-300 transform hover:scale-105">
+                <Link 
+                  href="/sign-up?role=parent" 
+                  className="px-8 py-3 bg-violet-500 hover:bg-violet-400 text-white rounded-full transition-all duration-300 transform hover:scale-105"
+                >
                   I'm a Parent
-                </button>
-                <button className="px-8 py-3 bg-pink-100 hover:bg-pink-200 text-violet-600 rounded-full transition-all duration-300 transform hover:scale-105">
+                </Link>
+                <Link 
+                  href="/sign-up?role=childminder" 
+                  className="px-8 py-3 bg-pink-100 hover:bg-pink-200 text-violet-600 rounded-full transition-all duration-300 transform hover:scale-105"
+                >
                   I'm a Childminder
-                </button>
+                </Link>
               </div>
 
               <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-200">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-violet-300" />
-                  <span>Garda Vetted</span>
+                  <span>Smart Matching</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-violet-300" />
+                  <span>Personality Match</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-violet-300" />
                   <span>Verified Reviews</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-violet-300" />
-                  <span>Subscription Required</span>
                 </div>
               </div>
             </div>
