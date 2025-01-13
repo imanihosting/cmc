@@ -1,50 +1,194 @@
 'use client'
 
-import { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, MessageCircle, Star, Bell, Users, BookOpen, ChevronRight, Mail, CheckCircle, XCircle, Clock, Euro } from 'lucide-react'
+import { useUser } from "@clerk/nextjs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
+import { CardHeader } from "@/components/ui/card";
+import { CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { motion } from "framer-motion";
+import { CheckCircle, XCircle, Star, Clock, Users, Calendar, DollarSign } from "lucide-react";
+import { useState, useEffect } from "react";
 
-// Mock data
-const quickStats = [
-  { title: 'Active Bookings', value: 5, icon: BookOpen },
-  { title: 'Average Rating', value: '4.8', icon: Star },
-  { title: 'Unread Messages', value: 3, icon: Mail },
-  { title: 'Hourly Rate', value: '€15', icon: Euro },
-]
+// Interfaces
+interface QuickStats {
+  [key: string]: number;
+  totalBookings: number;
+  activeChildren: number;
+  rating: number;
+  hourlyRate: number;
+}
 
-const todaySchedule = [
-  { id: 1, child: 'Emma', parent: 'John Doe', time: '09:00 AM - 02:00 PM' },
-  { id: 2, child: 'Liam', parent: 'Jane Smith', time: '03:00 PM - 07:00 PM' },
-]
+interface QuickStat {
+  title: string;
+  key: string;
+  icon: any;
+  prefix?: string;
+}
 
-const pendingRequests = [
-  { id: 1, child: 'Sophia', parent: 'Michael Johnson', date: '2023-07-25', time: '10:00 AM - 04:00 PM' },
-  { id: 2, child: 'Oliver', parent: 'Emily Brown', date: '2023-07-26', time: '09:00 AM - 03:00 PM' },
-]
+interface Booking {
+  id: string;
+  child: string;
+  parent: string;
+  time: string;
+  date?: string;
+}
 
-const recentReviews = [
-  { id: 1, parent: 'Alice Wilson', rating: 5, comment: 'Excellent care and attention to detail!', date: '2023-07-15' },
-  { id: 2, parent: 'David Thompson', rating: 4, comment: 'Very reliable and professional.', date: '2023-07-10' },
-]
+interface Review {
+  id: string;
+  parent: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
-const recentMessages = [
-  { id: 1, sender: 'John Doe', message: 'Can you accommodate an extra hour tomorrow?', time: '2 hours ago' },
-  { id: 2, sender: 'Jane Smith', message: 'Thank you for taking such good care of Liam!', time: '1 day ago' },
-]
+interface Message {
+  id: string;
+  sender: string;
+  message: string;
+  time: string;
+}
 
-const AnimatedCard = motion(Card)
+// Animated card component
+const AnimatedCard = motion(Card);
+
+// Quick stats configuration
+const quickStatsConfig: QuickStat[] = [
+  { title: "Total Bookings", key: "totalBookings", icon: Calendar },
+  { title: "Active Children", key: "activeChildren", icon: Users },
+  { title: "Rating", key: "rating", icon: Star },
+  { title: "Hourly Rate", key: "hourlyRate", icon: DollarSign, prefix: "€" }
+];
 
 export default function ChildminderDashboard() {
   const { isLoaded, user } = useUser();
+  
+  // State for dashboard data
+  const [quickStats, setQuickStats] = useState<QuickStats>({
+    totalBookings: 0,
+    activeChildren: 0,
+    rating: 0,
+    hourlyRate: 0
+  });
+  
+  const [todaySchedule, setTodaySchedule] = useState<Booking[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Booking[]>([]);
+  const [recentReviews, setRecentReviews] = useState<Review[]>([]);
+  const [recentMessages, setRecentMessages] = useState<Message[]>([]);
+
+  // Fetch dashboard data
+  useEffect(() => {
+    if (user) {
+      // Fetch quick stats
+      fetchQuickStats();
+      // Fetch today's schedule
+      fetchTodaySchedule();
+      // Fetch pending requests
+      fetchPendingRequests();
+      // Fetch recent reviews
+      fetchRecentReviews();
+      // Fetch recent messages
+      fetchRecentMessages();
+    }
+  }, [user]);
+
+  // Handlers for booking actions
+  const handleAcceptBooking = async (bookingId: string) => {
+    try {
+      // API call to accept booking
+      const response = await fetch(`/api/bookings/${bookingId}/accept`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        // Refresh pending requests
+        fetchPendingRequests();
+      }
+    } catch (error) {
+      console.error('Error accepting booking:', error);
+    }
+  };
+
+  const handleDeclineBooking = async (bookingId: string) => {
+    try {
+      // API call to decline booking
+      const response = await fetch(`/api/bookings/${bookingId}/decline`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        // Refresh pending requests
+        fetchPendingRequests();
+      }
+    } catch (error) {
+      console.error('Error declining booking:', error);
+    }
+  };
+
+  // Data fetching functions
+  const fetchQuickStats = async () => {
+    try {
+      const response = await fetch('/api/childminder/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setQuickStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching quick stats:', error);
+    }
+  };
+
+  const fetchTodaySchedule = async () => {
+    try {
+      const response = await fetch('/api/childminder/schedule/today');
+      if (response.ok) {
+        const data = await response.json();
+        setTodaySchedule(data);
+      }
+    } catch (error) {
+      console.error('Error fetching today schedule:', error);
+    }
+  };
+
+  const fetchPendingRequests = async () => {
+    try {
+      const response = await fetch('/api/childminder/bookings/pending');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingRequests(data);
+      }
+    } catch (error) {
+      console.error('Error fetching pending requests:', error);
+    }
+  };
+
+  const fetchRecentReviews = async () => {
+    try {
+      const response = await fetch('/api/childminder/reviews');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentReviews(data);
+      }
+    } catch (error) {
+      console.error('Error fetching recent reviews:', error);
+    }
+  };
+
+  const fetchRecentMessages = async () => {
+    try {
+      const response = await fetch('/api/childminder/messages');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentMessages(data);
+      }
+    } catch (error) {
+      console.error('Error fetching recent messages:', error);
+    }
+  };
 
   // Check authentication and role
   if (!isLoaded) {
-    return null; // or loading spinner
+    return null;
   }
 
   if (!user) {
@@ -54,8 +198,6 @@ export default function ChildminderDashboard() {
 
   const userRole = user.publicMetadata.role as string;
   const onboardingComplete = user.publicMetadata.onboardingComplete as boolean;
-
-  console.log('Childminder portal, onboardingComplete:', onboardingComplete);
 
   if (userRole !== 'childminder') {
     window.location.href = '/portal/' + userRole;
@@ -83,7 +225,7 @@ export default function ChildminderDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {quickStats.map((stat, index) => (
+          {quickStatsConfig.map((stat, index) => (
             <AnimatedCard 
               key={index}
               className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
@@ -97,7 +239,9 @@ export default function ChildminderDashboard() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                    {stat.key === 'hourlyRate' ? `${stat.prefix}${quickStats[stat.key]}` : quickStats[stat.key]}
+                  </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
                 </div>
               </CardContent>
@@ -120,19 +264,23 @@ export default function ChildminderDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {todaySchedule.map((booking, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Clock className="h-10 w-10 text-indigo-500" />
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{booking.child}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Parent: {booking.parent}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{booking.time}</p>
+                {todaySchedule.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No bookings scheduled for today</p>
+                ) : (
+                  todaySchedule.map((booking) => (
+                    <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Clock className="h-10 w-10 text-indigo-500" />
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">{booking.child}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Parent: {booking.parent}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{booking.time}</p>
+                        </div>
                       </div>
+                      <Button variant="outline" size="sm">Details</Button>
                     </div>
-                    <Button variant="outline" size="sm">Details</Button>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
@@ -151,26 +299,30 @@ export default function ChildminderDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {pendingRequests.map((request, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Users className="h-10 w-10 text-indigo-500" />
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{request.child}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Parent: {request.parent}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{request.date} • {request.time}</p>
+                {pendingRequests.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No pending booking requests</p>
+                ) : (
+                  pendingRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Users className="h-10 w-10 text-indigo-500" />
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">{request.child}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Parent: {request.parent}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{request.date} • {request.time}</p>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => handleAcceptBooking(request.id)}>
+                          <CheckCircle className="w-4 h-4 mr-1" /> Accept
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDeclineBooking(request.id)}>
+                          <XCircle className="w-4 h-4 mr-1" /> Decline
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        <CheckCircle className="w-4 h-4 mr-1" /> Accept
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <XCircle className="w-4 h-4 mr-1" /> Decline
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
@@ -189,20 +341,24 @@ export default function ChildminderDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentReviews.map((review, index) => (
-                  <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-semibold text-gray-900 dark:text-white">{review.parent}</p>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
-                        ))}
+                {recentReviews.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No reviews yet</p>
+                ) : (
+                  recentReviews.map((review) => (
+                    <div key={review.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-semibold text-gray-900 dark:text-white">{review.parent}</p>
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                          ))}
+                        </div>
                       </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{review.comment}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{review.date}</p>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{review.comment}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{review.date}</p>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
@@ -221,84 +377,28 @@ export default function ChildminderDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentMessages.map((message, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <Avatar>
-                      <AvatarFallback>{message.sender[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-semibold text-gray-900 dark:text-white">{message.sender}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{message.message}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
+                {recentMessages.length === 0 ? (
+                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No messages yet</p>
+                ) : (
+                  recentMessages.map((message) => (
+                    <div key={message.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <Avatar>
+                        <AvatarFallback>{message.sender[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <p className="font-semibold text-gray-900 dark:text-white">{message.sender}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{message.message}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
+                      </div>
+                      <Button variant="outline" size="sm">Reply</Button>
                     </div>
-                    <Button variant="outline" size="sm">Reply</Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Availability Schedule</span>
-                <Button variant="ghost" size="sm">Update Availability</Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">{day}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">9:00 AM - 5:00 PM</span>
-                      <Badge>Available</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Qualifications & Experience</span>
-                <Button variant="ghost" size="sm">Update Profile</Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Qualifications</h3>
-                  <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300">
-                    <li>Early Childhood Education Diploma</li>
-                    <li>First Aid and CPR Certified</li>
-                    <li>Child Protection Training</li>
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Experience</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    5+ years of experience in childcare, including 3 years as a registered childminder.
-                    Specialized in early childhood development and creating engaging learning environments.
-                  </p>
-                </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </AnimatedCard>
         </div>
       </div>
     </div>
-  )
+  );
 }

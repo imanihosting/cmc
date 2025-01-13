@@ -7,7 +7,23 @@ import { cn } from "@/lib/utils"
 
 const Select = SelectPrimitive.Root
 
-const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => (
+interface SelectTriggerProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> {
+  className?: string
+}
+
+interface SelectContentProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> {
+  className?: string
+  position?: "popper" | "item-aligned"
+}
+
+interface SelectItemProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> {
+  className?: string
+}
+
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  SelectTriggerProps
+>(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
@@ -22,9 +38,12 @@ const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) 
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
-SelectTrigger.displayName = "SelectTrigger"
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
-const SelectContent = React.forwardRef(({ className, children, position = "popper", ...props }, ref) => (
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  SelectContentProps
+>(({ className, children, position = "popper", ...props }, ref) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
@@ -41,9 +60,12 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ))
-SelectContent.displayName = "SelectContent"
+SelectContent.displayName = SelectPrimitive.Content.displayName
 
-const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => (
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  SelectItemProps
+>(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
@@ -60,7 +82,7 @@ const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => 
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
   </SelectPrimitive.Item>
 ))
-SelectItem.displayName = "SelectItem"
+SelectItem.displayName = SelectPrimitive.Item.displayName
 
 const SelectValue = SelectPrimitive.Value
 

@@ -53,18 +53,29 @@ export default function RootLayout({
                     <span className="relative z-10">Contact</span>
                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-violet-600 transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
                   </Link>
-                  <SignedOut>
-                    <Link href="/sign-in" className="text-gray-800 hover:text-violet-600 transition-colors font-poppins font-medium relative group">
-                      <span className="relative z-10">Sign In</span>
+                  <SignedIn>
+                    <Link href="/portal/admin" className="text-gray-800 hover:text-violet-600 transition-colors font-poppins font-medium relative group">
+                      <span className="relative z-10">Dashboard</span>
                       <span className="absolute bottom-0 left-0 w-full h-0.5 bg-violet-600 transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
                     </Link>
-                    <Link href="/sign-up" className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-2 rounded-full hover:from-violet-700 hover:to-purple-700 transition-all duration-300 font-poppins font-medium transform hover:scale-105 shadow-md hover:shadow-lg">
-                      Sign Up
-                    </Link>
-                  </SignedOut>
-                  <SignedIn>
                     <UserButton afterSignOutUrl="/" />
                   </SignedIn>
+                  <SignedOut>
+                    <div className="flex items-center space-x-4">
+                      <Link 
+                        href="/sign-in"
+                        className="px-4 py-2 rounded-full text-violet-600 hover:text-violet-700 transition-colors font-medium"
+                      >
+                        Sign In
+                      </Link>
+                      <Link 
+                        href="/sign-up"
+                        className="px-4 py-2 rounded-full bg-violet-600 text-white hover:bg-violet-700 transition-colors font-medium"
+                      >
+                        Sign Up
+                      </Link>
+                    </div>
+                  </SignedOut>
                 </div>
               </div>
             </nav>

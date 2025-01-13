@@ -1,17 +1,45 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
-const prismaClientSingleton = () => {
-  return new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
 };
 
-declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
-}
-
-const prisma = globalThis.prisma ?? prismaClientSingleton();
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+    {
+      emit: 'event',
+      level: 'error',
+    },
+    {
+      emit: 'event',
+      level: 'info',
+    },
+    {
+      emit: 'event',
+      level: 'warn',
+    },
+  ],
+});
 
 if (process.env.NODE_ENV !== 'production') {
-  globalThis.prisma = prisma;
+  globalForPrisma.prisma = prisma;
 }
 
-export { prisma };
+// Type the events
+prisma.$on('error' as never, (e) => {
+  console.error('Prisma Client error:', e);
+}) as unknown;
+
+prisma.$on('warn' as never, (e) => {
+  console.warn('Prisma Client warning:', e);
+}) as unknown;
+
+prisma.$on('query' as never, (e) => {
+  console.log('Query:', e);
+}) as unknown;
+
+export default prisma;

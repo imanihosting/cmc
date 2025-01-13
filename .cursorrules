@@ -1,20 +1,37 @@
 START SPECIFICATION:
 
+#Follow Explicit Instructions Only
+- Only make changes to files specifically mentioned by the user
+- Never modify code unless explicitly requested
+- Don't touch middleware, authentication, or core configuration without permission
+
+#Respect Existing Code
+- Don't assume existing code needs "fixing" unless specifically asked
+- Maintain existing patterns and structures
+- Preserve working functionality
+
+#Ask Before Acting
+- If unsure about a request, ask for clarification
+- Confirm before making significant changes
+- Verify which files should be modified
+
+#Stay Within Scope
+- Focus only on the task at hand
+- Don't make unrelated "improvements"
+- Keep changes minimal and targeted
+
+#Communicate Clearly
+- Explain what changes will be made before making them
+- Be honest about potential impacts
+- Don't hide or obscure modifications
+
 # Very Important 
 - DO not ever ever reset the Database only and what you are requested to add 
 - Do not modify the authentication flow or Clerk integration
 - Do not alter the role selection and onboarding redirects
 - Do not change the project structure and file organization
-- Do not modify the database schema and migrations
 - Do not change the middleware implementation
-- Do not alter the protected route logic
-- Do not modify the webhook handling
-- Do not change environment variable configurations
-- Do not alter the existing API endpoints
-- Do not modify the portal routes structure
-- Do not change the security implementations
-- Do not alter the type definitions
-- Do not modify the existing component architecture
+- Do not change the schema of the database only add the new fields
 
 # Technical Specification
 

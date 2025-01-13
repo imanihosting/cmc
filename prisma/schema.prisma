@@ -35,12 +35,8 @@ model User {
   personalityTraits Json?    @default("[]")
   matchPreferences  Json?    @default("{\"maxDistance\": 10, \"personalityTraits\": [], \"availabilityPreference\": {}, \"weights\": {\"distance\": 0.3, \"experience\": 0.2, \"rating\": 0.2, \"personality\": 0.3}}")
   geolocation       String?  @db.Text // JSON string storing lat/lon
-  experience        String?  // Years of experience
   averageRating     Float?   @default(0)
-  hourlyRate        Float?   @default(0)
-  availability      String?  @db.Text // JSON object of availability slots
   specialNeedsExperience Boolean @default(false)
-  preferences       String?  @db.Text // JSON object of matching preferences
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
