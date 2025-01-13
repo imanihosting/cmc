@@ -11,36 +11,40 @@ interface SmartSearchProps {
 }
 
 interface SearchFilters {
-  location: string;
-  maxDistance: number;
-  personalityTraits: string[];
-  availability: {
-    morning?: boolean;
-    afternoon?: boolean;
-    evening?: boolean;
-    weekend?: boolean;
+  personalityTraits?: string[];
+  availabilityNeeded?: {
+    startTime: string;
+    endTime: string;
+    days: string[];
   };
-  experience: number;
-  specialNeeds: boolean;
+  maxDistance?: number;
+  lastMinute?: boolean;
+  specializedCare?: string[];
 }
 
 export function SmartSearch({ onSearch }: SmartSearchProps) {
-  const [location, setLocation] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<SearchFilters>({
-    location: '',
     maxDistance: 10,
     personalityTraits: [],
-    availability: {},
-    experience: 0,
-    specialNeeds: false
+    availabilityNeeded: {
+      startTime: '09:00',
+      endTime: '17:00',
+      days: []
+    },
+    specializedCare: [],
+    lastMinute: false
   })
 
   const handleSearch = () => {
-    onSearch({
-      ...filters,
-      location
-    })
+    // Only include fields that have values
+    const searchQuery: SearchFilters = {};
+    if (filters.maxDistance) searchQuery.maxDistance = filters.maxDistance;
+    if (filters.personalityTraits?.length) searchQuery.personalityTraits = filters.personalityTraits;
+    if (filters.specializedCare?.length) searchQuery.specializedCare = filters.specializedCare;
+    if (filters.lastMinute) searchQuery.lastMinute = true;
+    if (filters.availabilityNeeded?.days.length) searchQuery.availabilityNeeded = filters.availabilityNeeded;
+
+    onSearch(searchQuery);
   }
 
   const updateFilters = (updates: Partial<SearchFilters>) => {
@@ -53,33 +57,26 @@ export function SmartSearch({ onSearch }: SmartSearchProps) {
   return (
     <div className="w-full max-w-3xl mx-auto space-y-4">
       <div className="flex gap-2">
-        <Input
-          type="text"
-          placeholder="Enter your location..."
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="flex-1"
-        />
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" onClick={() => setShowFilters(true)}>
-              Filters
+            <Button variant="outline">
+              Search Filters
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Advanced Search Filters</DialogTitle>
+              <DialogTitle>Smart Search Filters</DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
               <div className="space-y-2">
                 <Label>Maximum Distance (km)</Label>
                 <Slider
-                  value={[filters.maxDistance]}
+                  value={[filters.maxDistance || 10]}
                   onValueChange={([value]: number[]) => updateFilters({ maxDistance: value })}
                   max={50}
                   step={1}
                 />
-                <span className="text-sm text-muted-foreground">{filters.maxDistance} km</span>
+                <span className="text-sm text-muted-foreground">{filters.maxDistance || 10} km</span>
               </div>
 
               <div className="space-y-2">
@@ -88,11 +85,11 @@ export function SmartSearch({ onSearch }: SmartSearchProps) {
                   {['Patient', 'Energetic', 'Creative', 'Organized'].map(trait => (
                     <Button
                       key={trait}
-                      variant={filters.personalityTraits.includes(trait) ? "default" : "outline"}
+                      variant={filters.personalityTraits?.includes(trait) ? "default" : "outline"}
                       onClick={() => {
-                        const traits = filters.personalityTraits.includes(trait)
+                        const traits = filters.personalityTraits?.includes(trait)
                           ? filters.personalityTraits.filter(t => t !== trait)
-                          : [...filters.personalityTraits, trait]
+                          : [...(filters.personalityTraits || []), trait]
                         updateFilters({ personalityTraits: traits })
                       }}
                     >
@@ -106,46 +103,57 @@ export function SmartSearch({ onSearch }: SmartSearchProps) {
                 <Label>Availability</Label>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    ['morning', 'Morning'],
-                    ['afternoon', 'Afternoon'],
-                    ['evening', 'Evening'],
-                    ['weekend', 'Weekend']
-                  ].map(([key, label]) => (
-                    <div key={key} className="flex items-center space-x-2">
+                    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+                    'Friday', 'Saturday', 'Sunday'
+                  ].map((day) => (
+                    <div key={day} className="flex items-center space-x-2">
                       <Switch
-                        checked={filters.availability[key as keyof typeof filters.availability] || false}
-                        onCheckedChange={(checked) => 
+                        checked={filters.availabilityNeeded?.days.includes(day) || false}
+                        onCheckedChange={(checked) => {
+                          const days = checked
+                            ? [...(filters.availabilityNeeded?.days || []), day]
+                            : filters.availabilityNeeded?.days.filter(d => d !== day) || [];
                           updateFilters({
-                            availability: {
-                              ...filters.availability,
-                              [key]: checked
+                            availabilityNeeded: {
+                              startTime: filters.availabilityNeeded?.startTime || '09:00',
+                              endTime: filters.availabilityNeeded?.endTime || '17:00',
+                              days
                             }
                           })
-                        }
+                        }}
                       />
-                      <Label>{label}</Label>
+                      <Label>{day}</Label>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Minimum Years of Experience</Label>
-                <Slider
-                  value={[filters.experience]}
-                  onValueChange={([value]: number[]) => updateFilters({ experience: value })}
-                  max={20}
-                  step={1}
-                />
-                <span className="text-sm text-muted-foreground">{filters.experience} years</span>
+                <Label>Specialized Care</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Special Needs', 'Infant Care', 'Homework Help', 'Multilingual'].map(care => (
+                    <Button
+                      key={care}
+                      variant={filters.specializedCare?.includes(care) ? "default" : "outline"}
+                      onClick={() => {
+                        const careTypes = filters.specializedCare?.includes(care)
+                          ? filters.specializedCare.filter(t => t !== care)
+                          : [...(filters.specializedCare || []), care]
+                        updateFilters({ specializedCare: careTypes })
+                      }}
+                    >
+                      {care}
+                    </Button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
-                  checked={filters.specialNeeds}
-                  onCheckedChange={(checked) => updateFilters({ specialNeeds: checked })}
+                  checked={filters.lastMinute || false}
+                  onCheckedChange={(checked) => updateFilters({ lastMinute: checked })}
                 />
-                <Label>Special Needs Experience</Label>
+                <Label>Last Minute Availability</Label>
               </div>
             </div>
           </DialogContent>

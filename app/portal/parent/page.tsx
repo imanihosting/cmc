@@ -279,7 +279,7 @@ export default function ParentDashboard() {
                   <MessageCircle className="h-5 w-5 text-purple-500" />
                   <span>Recent Messages</span>
                 </div>
-                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/messages'}>View All</Button>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/parent/messages'}>View All</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -294,7 +294,14 @@ export default function ParentDashboard() {
                       <p className="text-sm text-gray-500 dark:text-gray-400">{message.content}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
                     </div>
-                    <Button variant="outline" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = `/portal/messages/${message.sender.id}`}>Reply</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="hover:bg-purple-50 dark:hover:bg-purple-900" 
+                      onClick={() => window.location.href = `/portal/parent/messages/${message.sender.id}`}
+                    >
+                      Reply
+                    </Button>
                   </div>
                 ))}
                 {messages.length === 0 && (
@@ -317,7 +324,7 @@ export default function ParentDashboard() {
                   <CalendarDays className="h-5 w-5 text-purple-500" />
                   <span>Upcoming Bookings</span>
                 </div>
-                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/bookings'}>View All</Button>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/parent/bookings'}>View All</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
@@ -359,7 +366,7 @@ export default function ParentDashboard() {
                   <Users className="h-5 w-5 text-purple-500" />
                   <span>Children Profiles</span>
                 </div>
-                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/children'}>Manage</Button>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/parent/children'}>Manage</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">

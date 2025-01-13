@@ -1,153 +1,117 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { auth } from '@clerk/nextjs/server'
+import { NextResponse, NextRequest } from 'next/server'
+import { getAuth } from '@clerk/nextjs/server'
+import prisma from '@/lib/prisma'
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { bookingId: string } }
 ) {
   try {
-    const session = await auth()
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { userId } = getAuth(request)
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: session.userId },
-      select: { id: true, role: true }
-    })
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    const bookingId = parseInt(params.bookingId)
+    if (isNaN(bookingId)) {
+      return new NextResponse('Invalid booking ID', { status: 400 })
     }
 
     const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(params.bookingId) },
+      where: { id: bookingId },
       include: {
-        parent: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
         childminder: {
           select: {
             name: true,
-            email: true,
-            hourlyRate: true
+            profilePicture: true
           }
         },
         child: {
           select: {
             name: true
           }
-        }
+        },
+        parent: true
       }
     })
 
     if (!booking) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+      return new NextResponse('Booking not found', { status: 404 })
     }
 
-    // Check if user has permission to view this booking
-    if (
-      dbUser.role !== 'admin' &&
-      dbUser.id !== booking.parentId &&
-      dbUser.id !== booking.childminderId
-    ) {
-      return NextResponse.json({ error: 'Not authorized to view this booking' }, { status: 403 })
+    if (booking.parent.clerkId !== userId) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
     return NextResponse.json(booking)
   } catch (error) {
-    console.error('Error in booking GET endpoint:', error)
-    return NextResponse.json(
-      { error: 'Internal server error while fetching booking' },
-      { status: 500 }
-    )
+    console.error('[BOOKING_GET]', error)
+    return new NextResponse('Internal error', { status: 500 })
   }
 }
 
-export async function PATCH(
-  request: Request,
+export async function PUT(
+  request: NextRequest,
   { params }: { params: { bookingId: string } }
 ) {
   try {
-    const session = await auth()
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { userId } = getAuth(request)
+    if (!userId) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: session.userId },
-      select: { id: true, role: true }
-    })
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    const bookingId = parseInt(params.bookingId)
+    if (isNaN(bookingId)) {
+      return new NextResponse('Invalid booking ID', { status: 400 })
     }
 
     const body = await request.json()
-    const { status, startTime, endTime, additionalInfo } = body
+    const { startTime, endTime, additionalInfo } = body
 
-    // Verify the user has permission to update this booking
+    // Verify the booking belongs to the user
     const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(params.bookingId) },
-      select: {
-        parentId: true,
-        childminderId: true,
-        status: true
-      }
+      where: { id: bookingId },
+      include: { parent: true }
     })
 
     if (!booking) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+      return new NextResponse('Booking not found', { status: 404 })
     }
 
-    // Only allow updates if user is admin, the parent who created the booking,
-    // or the childminder assigned to the booking
-    if (
-      dbUser.role !== 'admin' &&
-      dbUser.id !== booking.parentId &&
-      dbUser.id !== booking.childminderId
-    ) {
-      return NextResponse.json({ error: 'Not authorized to update this booking' }, { status: 403 })
+    if (booking.parent.clerkId !== userId) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    // Build update data based on user role and current booking status
-    const updateData: any = {}
+    // Validate dates
+    const newStartTime = new Date(startTime)
+    const newEndTime = new Date(endTime)
 
-    if (status && (dbUser.role === 'admin' || dbUser.id === booking.childminderId)) {
-      updateData.status = status
+    if (isNaN(newStartTime.getTime()) || isNaN(newEndTime.getTime())) {
+      return new NextResponse('Invalid date format', { status: 400 })
     }
 
-    if (dbUser.role === 'admin') {
-      // Admin can update all fields
-      if (startTime) updateData.startTime = new Date(startTime)
-      if (endTime) updateData.endTime = new Date(endTime)
-      if (additionalInfo !== undefined) updateData.additionalInfo = additionalInfo
-    } else if (dbUser.id === booking.parentId && booking.status === 'pending') {
-      // Parent can update time and info only if booking is still pending
-      if (startTime) updateData.startTime = new Date(startTime)
-      if (endTime) updateData.endTime = new Date(endTime)
-      if (additionalInfo !== undefined) updateData.additionalInfo = additionalInfo
+    if (newEndTime <= newStartTime) {
+      return new NextResponse('End time must be after start time', { status: 400 })
     }
 
+    if (newStartTime < new Date()) {
+      return new NextResponse('Cannot update past bookings', { status: 400 })
+    }
+
+    // Update the booking
     const updatedBooking = await prisma.booking.update({
-      where: { id: parseInt(params.bookingId) },
-      data: updateData,
+      where: { id: bookingId },
+      data: {
+        startTime: newStartTime,
+        endTime: newEndTime,
+        additionalInfo,
+        status: 'pending' // Reset to pending since times changed
+      },
       include: {
-        parent: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
         childminder: {
           select: {
             name: true,
-            email: true,
-            hourlyRate: true
+            profilePicture: true
           }
         },
         child: {
@@ -160,68 +124,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedBooking)
   } catch (error) {
-    console.error('Error in booking PATCH endpoint:', error)
-    return NextResponse.json(
-      { error: 'Internal server error while updating booking' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: { bookingId: string } }
-) {
-  try {
-    const session = await auth()
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: session.userId },
-      select: { id: true, role: true }
-    })
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    // Verify the booking exists and user has permission to delete it
-    const booking = await prisma.booking.findUnique({
-      where: { id: parseInt(params.bookingId) },
-      select: {
-        parentId: true,
-        status: true
-      }
-    })
-
-    if (!booking) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
-    }
-
-    // Only allow deletion if user is admin or the parent who created the booking
-    // and the booking is still pending
-    if (
-      dbUser.role !== 'admin' &&
-      (dbUser.id !== booking.parentId || booking.status !== 'pending')
-    ) {
-      return NextResponse.json(
-        { error: 'Not authorized to delete this booking' },
-        { status: 403 }
-      )
-    }
-
-    await prisma.booking.delete({
-      where: { id: parseInt(params.bookingId) }
-    })
-
-    return NextResponse.json({ message: 'Booking deleted successfully' })
-  } catch (error) {
-    console.error('Error in booking DELETE endpoint:', error)
-    return NextResponse.json(
-      { error: 'Internal server error while deleting booking' },
-      { status: 500 }
-    )
+    console.error('[BOOKING_UPDATE]', error)
+    return new NextResponse('Internal error', { status: 500 })
   }
 } 
