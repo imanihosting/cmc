@@ -208,7 +208,7 @@ async function main() {
   // Create bookings and reviews
   for (const parent of parents) {
     for (const child of parent.children) {
-      // Create 2-4 bookings per child with random childminders
+      // Create 2-4 completed bookings per child with random childminders
       const bookingCount = 2 + Math.floor(Math.random() * 3);
       for (let i = 0; i < bookingCount; i++) {
         const randomChildminder = childminders[Math.floor(Math.random() * childminders.length)];
@@ -243,6 +243,31 @@ async function main() {
             review: `${rating === 5 ? 'Excellent' : 'Very good'} service! ${randomChildminder.name} was ${
               rating === 5 ? 'amazing' : 'professional'} with the children. ${
               rating === 5 ? 'Highly recommended!' : 'Would book again.'}`
+          }
+        });
+      }
+
+      // Create 1-2 pending bookings per child
+      const pendingBookingCount = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < pendingBookingCount; i++) {
+        const randomChildminder = childminders[Math.floor(Math.random() * childminders.length)];
+        const startTime = new Date();
+        startTime.setDate(startTime.getDate() + (i * 3) + 1); // Future bookings
+        
+        await prisma.booking.create({
+          data: {
+            parentId: parent.id,
+            childminderId: randomChildminder.id,
+            childId: child.id,
+            startTime: startTime,
+            endTime: new Date(startTime.getTime() + 4 * 60 * 60 * 1000),
+            status: BookingStatus.pending,
+            additionalInfo: JSON.stringify({
+              specialInstructions: 'Please bring outdoor clothes',
+              emergencyContact: '+353 87 123 4567',
+              pickupPerson: parent.name,
+              activities: getRandomActivities(2)
+            })
           }
         });
       }

@@ -5,10 +5,15 @@ const prisma = new PrismaClient();
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 async function main() {
+  console.log('Starting cleanup...');
+  
   try {
-    console.log('Starting cleanup...');
+    // Get all test users from Clerk first
+    const { data: users } = await clerkClient.users.getUserList();
+    const testUsers = users.filter(user => user.emailAddresses.some(email => email.emailAddress.includes('@example.com')));
+    console.log(`Found ${testUsers.length} Clerk users to delete`);
 
-    // First delete all test data from database
+    // Delete database records first
     console.log('Deleting database records...');
     await prisma.message.deleteMany({
       where: {
@@ -18,6 +23,7 @@ async function main() {
         ]
       }
     });
+
     await prisma.conversation.deleteMany({
       where: {
         OR: [
@@ -26,6 +32,7 @@ async function main() {
         ]
       }
     });
+
     await prisma.review.deleteMany({
       where: {
         OR: [
@@ -34,6 +41,7 @@ async function main() {
         ]
       }
     });
+
     await prisma.booking.deleteMany({
       where: {
         OR: [
@@ -42,27 +50,30 @@ async function main() {
         ]
       }
     });
+
     await prisma.child.deleteMany({
       where: {
         parent: { email: { contains: '@example.com' } }
       }
     });
+
     await prisma.user.deleteMany({
       where: {
         email: { contains: '@example.com' }
       }
     });
+
     console.log('Database records deleted');
 
-    // Then delete users from Clerk
+    // Now delete Clerk users
     console.log('Deleting Clerk users...');
-    const { data: users } = await clerkClient.users.getUserList();
-    const testUsers = users.filter(user => user.emailAddresses.some(email => email.emailAddress.includes('@example.com')));
-    console.log(`Found ${testUsers.length} Clerk users to delete`);
-    
     for (const user of testUsers) {
-      await clerkClient.users.deleteUser(user.id);
-      console.log(`Deleted Clerk user: ${user.emailAddresses[0].emailAddress}`);
+      try {
+        await clerkClient.users.deleteUser(user.id);
+        console.log(`Deleted Clerk user: ${user.emailAddresses[0].emailAddress}`);
+      } catch (error) {
+        console.error(`Failed to delete Clerk user ${user.emailAddresses[0].emailAddress}:`, error);
+      }
     }
     console.log('Clerk users deleted');
 
@@ -73,4 +84,11 @@ async function main() {
   }
 }
 
-main(); 
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  }); 
