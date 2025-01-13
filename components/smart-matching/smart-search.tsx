@@ -1,12 +1,14 @@
-'use client'
-
 import React, { useState } from 'react'
-import { Search, Sliders, MapPin } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+
+interface SmartSearchProps {
+  onSearch: (filters: SearchFilters) => void;
+}
 
 interface SearchFilters {
   location: string;
@@ -22,18 +24,13 @@ interface SearchFilters {
   specialNeeds: boolean;
 }
 
-interface SmartSearchProps {
-  onSearch: (filters: SearchFilters) => void;
-  className?: string;
-}
-
-export function SmartSearch({ onSearch, className = '' }: SmartSearchProps) {
+export function SmartSearch({ onSearch }: SmartSearchProps) {
   const [location, setLocation] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<SearchFilters>({
     location: '',
     maxDistance: 10,
-    personalityTraits: [] as string[],
+    personalityTraits: [],
     availability: {},
     experience: 0,
     specialNeeds: false
@@ -54,26 +51,19 @@ export function SmartSearch({ onSearch, className = '' }: SmartSearchProps) {
   }
 
   return (
-    <div className={`w-full max-w-3xl mx-auto space-y-4 ${className}`}>
-      <div className="flex gap-2 p-2 bg-white/10 backdrop-blur-sm rounded-full">
-        <div className="flex-1 relative">
-          <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <input 
-            type="text"
-            placeholder="Search by location or keyword"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-300"
-          />
-        </div>
+    <div className="w-full max-w-3xl mx-auto space-y-4">
+      <div className="flex gap-2">
+        <Input
+          type="text"
+          placeholder="Enter your location..."
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="flex-1"
+        />
         <Dialog>
           <DialogTrigger asChild>
-            <Button 
-              variant="ghost"
-              onClick={() => setShowFilters(true)}
-              className="px-4 bg-white/10 hover:bg-white/20 rounded-full"
-            >
-              <Sliders className="h-5 w-5 text-white" />
+            <Button variant="outline" onClick={() => setShowFilters(true)}>
+              Filters
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -101,7 +91,7 @@ export function SmartSearch({ onSearch, className = '' }: SmartSearchProps) {
                       variant={filters.personalityTraits.includes(trait) ? "default" : "outline"}
                       onClick={() => {
                         const traits = filters.personalityTraits.includes(trait)
-                          ? filters.personalityTraits.filter((t: string) => t !== trait)
+                          ? filters.personalityTraits.filter(t => t !== trait)
                           : [...filters.personalityTraits, trait]
                         updateFilters({ personalityTraits: traits })
                       }}
@@ -160,12 +150,7 @@ export function SmartSearch({ onSearch, className = '' }: SmartSearchProps) {
             </div>
           </DialogContent>
         </Dialog>
-        <button 
-          onClick={handleSearch}
-          className="px-6 py-3 bg-violet-500 hover:bg-violet-400 text-white rounded-full transition-all duration-300 transform hover:scale-105"
-        >
-          <Search className="h-5 w-5" />
-        </button>
+        <Button onClick={handleSearch}>Search</Button>
       </div>
     </div>
   )

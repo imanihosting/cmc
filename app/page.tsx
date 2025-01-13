@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, CheckCircle, Baby, Euro } from 'lucide-react'
+import { Search, CheckCircle, Baby, Euro, MapPin } from 'lucide-react'
 import { SmartSearch } from '@/components/search/SmartSearch'
 
 const testimonials = [

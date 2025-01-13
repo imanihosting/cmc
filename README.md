@@ -13,6 +13,13 @@ A comprehensive web application designed to connect parents with childminders, f
 - Profile management
 - Subscription handling
 - Notification system
+- Smart Matching & Advanced Search
+  - AI-powered childminder recommendations
+  - Personality trait matching
+  - Flexible scheduling search
+  - Location-based matching
+  - Experience and qualification filtering
+  - Language and special needs support filtering
 
 ## 🛠️ Tech Stack
 
@@ -81,6 +88,14 @@ npm run dev
   - Complete parent onboarding process
 - `POST /api/onboarding/childminder`
   - Complete childminder onboarding process
+
+### Smart Matching & Search
+- `POST /api/matching`
+  - Multiple endpoints in one route:
+    - `type: 'recommendations'` - Get AI-powered childminder recommendations
+    - `type: 'search'` - Advanced search with multiple filters
+    - `type: 'availability'` - Find childminders by availability
+    - `type: 'personality'` - Match by personality traits
 
 ### Protected Routes
 - `/portal/parent/*`
