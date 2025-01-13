@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,104 +8,94 @@ datasource db {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  clerkId        String?  @unique @db.VarChar(255)
-  name           String   @db.VarChar(255)
-  email          String   @unique @db.VarChar(255)
-  password       String   @db.VarChar(255)
-  role           Role
-  profilePicture String?  @db.VarChar(255)
-  experience     String?  @db.Text
-  qualifications String?  @db.Text
-  availability   Json?    // This will store availability schedule
-  serviceArea    String?  @db.VarChar(255)
-  hourlyRate     Decimal? @db.Decimal(10, 2)
-  gardaVetted    Boolean? @default(false)
-  tuslaRegistered Boolean? @default(false)
+  id                       Int            @id @default(autoincrement())
+  clerkId                  String?        @unique @db.VarChar(255)
+  name                     String         @db.VarChar(255)
+  email                    String         @unique @db.VarChar(255)
+  password                 String         @db.VarChar(255)
+  role                     Role
+  profilePicture           String?        @db.VarChar(255)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  gardaVetted              Boolean?       @default(false)
+  tuslaRegistered          Boolean?       @default(false)
+  availability             Json?
+  experience               String?        @db.Text
+  hourlyRate               Decimal?       @db.Decimal(10, 2)
+  qualifications           String?        @db.Text
+  serviceArea              String?        @db.VarChar(255)
+  latitude                 Decimal?       @db.Decimal(10, 8)
+  longitude                Decimal?       @db.Decimal(11, 8)
+  personalityTraits        Json?          @default(dbgenerated("(json_array())"))
+  matchPreferences         Json?          @default(dbgenerated("(json_object(_utf8mb4\\'maxDistance\\',10,_utf8mb4\\'personalityTraits\\',json_array(),_utf8mb4\\'availabilityPreference\\',json_object(),_utf8mb4\\'weights\\',json_object(_utf8mb4\\'distance\\',0.3,_utf8mb4\\'experience\\',0.2,_utf8mb4\\'rating\\',0.2,_utf8mb4\\'personality\\',0.3)))"))
   
-  // Smart Matching Fields
-  latitude          Decimal? @db.Decimal(10, 8)
-  longitude         Decimal? @db.Decimal(11, 8)
-  personalityTraits Json?    @default("[]")
-  matchPreferences  Json?    @default("{\"maxDistance\": 10, \"personalityTraits\": [], \"availabilityPreference\": {}, \"weights\": {\"distance\": 0.3, \"experience\": 0.2, \"rating\": 0.2, \"personality\": 0.3}}")
-  geolocation       String?  @db.Text // JSON string storing lat/lon
-  averageRating     Float?   @default(0)
-  specialNeedsExperience Boolean @default(false)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  // Personalized Experience Fields
+  spotlightUntil           DateTime?
+  lastMinuteAvailability   Boolean        @default(false)
+  availabilityRadius       Int            @default(10)
+  emergencyBookings        Boolean        @default(false)
+  languagesSpoken          Json?          @default(dbgenerated("(json_array())"))
+  specializedCare          Json?          @default(dbgenerated("(json_array())"))
 
   // Relations
-  children                  Child[]
-  parentBookings           Booking[]           @relation("ParentBookings")
-  childminderBookings      Booking[]           @relation("ChildminderBookings")
-  parentConversations      Conversation[]      @relation("ParentConversations")
-  childminderConversations Conversation[]      @relation("ChildminderConversations")
-  sentMessages             Message[]           @relation("SentMessages")
-  receivedMessages         Message[]           @relation("ReceivedMessages")
-  subscriptions            Subscription[]
-  parentReviews            Review[]            @relation("ParentReviews")
-  childminderReviews       Review[]            @relation("ChildminderReviews")
+  childminderBookings      Booking[]      @relation("ChildminderBookings")
+  parentBookings           Booking[]      @relation("ParentBookings")
+  children                 Child[]
+  childminderConversations Conversation[] @relation("ChildminderConversations")
+  parentConversations      Conversation[] @relation("ParentConversations")
+  receivedMessages         Message[]      @relation("ReceivedMessages")
+  sentMessages             Message[]      @relation("SentMessages")
   notifications            Notification[]
+  childminderReviews       Review[]       @relation("ChildminderReviews")
+  parentReviews            Review[]       @relation("ParentReviews")
+  subscriptions            Subscription[]
 
   @@map("users")
 }
 
-enum Role {
-  admin
-  parent
-  childminder
-}
-
 model Child {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   parentId       Int
-  name           String   @db.VarChar(255)
-  dateOfBirth    DateTime @db.Date
+  name           String    @db.VarChar(255)
+  dateOfBirth    DateTime  @db.Date
   gender         Gender
-  additionalInfo String?  @db.Text
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  // Relations
-  parent         User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  additionalInfo String?   @db.Text
+  
+  // Personalization Fields
+  allergies      Json?     @default(dbgenerated("(json_array())"))
+  preferences    Json?     @default(dbgenerated("(json_object())"))
+  routines       Json?     @default(dbgenerated("(json_object())"))
+  specialNeeds   Json?     @default(dbgenerated("(json_array())"))
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   bookings       Booking[]
+  parent         User      @relation(fields: [parentId], references: [id], onDelete: Cascade)
 
+  @@index([parentId], map: "children_parentId_fkey")
   @@map("children")
 }
 
-enum Gender {
-  male
-  female
-  other
-}
-
 model Booking {
-  id            Int      @id @default(autoincrement())
-  parentId      Int
-  childminderId Int
-  childId       Int
-  startTime     DateTime @db.DateTime
-  endTime       DateTime @db.DateTime
-  status        BookingStatus @default(pending)
-  additionalInfo String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             Int           @id @default(autoincrement())
+  parentId       Int
+  childminderId  Int
+  childId        Int
+  startTime      DateTime      @db.DateTime(0)
+  endTime        DateTime      @db.DateTime(0)
+  status         BookingStatus @default(pending)
+  additionalInfo String?       @db.Text
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  child          Child         @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childminder    User          @relation("ChildminderBookings", fields: [childminderId], references: [id], onDelete: Cascade)
+  parent         User          @relation("ParentBookings", fields: [parentId], references: [id], onDelete: Cascade)
+  reviews        Review[]
 
-  // Relations
-  parent        User     @relation("ParentBookings", fields: [parentId], references: [id], onDelete: Cascade)
-  childminder   User     @relation("ChildminderBookings", fields: [childminderId], references: [id], onDelete: Cascade)
-  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  reviews       Review[]
-
+  @@index([childId], map: "bookings_childId_fkey")
+  @@index([childminderId], map: "bookings_childminderId_fkey")
+  @@index([parentId], map: "bookings_parentId_fkey")
   @@map("bookings")
-}
-
-enum BookingStatus {
-  pending
-  accepted
-  rejected
-  completed
 }
 
 model Conversation {
@@ -119,12 +103,12 @@ model Conversation {
   parentId      Int
   childminderId Int
   startedAt     DateTime  @default(now())
-
-  // Relations
-  parent        User      @relation("ParentConversations", fields: [parentId], references: [id], onDelete: Cascade)
   childminder   User      @relation("ChildminderConversations", fields: [childminderId], references: [id], onDelete: Cascade)
+  parent        User      @relation("ParentConversations", fields: [parentId], references: [id], onDelete: Cascade)
   messages      Message[]
 
+  @@index([childminderId], map: "conversations_childminderId_fkey")
+  @@index([parentId], map: "conversations_parentId_fkey")
   @@map("conversations")
 }
 
@@ -135,30 +119,82 @@ model Message {
   receiverId     Int
   content        String       @db.Text
   sentAt         DateTime     @default(now())
-
-  // Relations
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
+  @@index([conversationId], map: "messages_conversationId_fkey")
+  @@index([receiverId], map: "messages_receiverId_fkey")
+  @@index([senderId], map: "messages_senderId_fkey")
   @@map("messages")
 }
 
 model Subscription {
-  id         Int               @id @default(autoincrement())
-  userId     Int
-  planName   String           @db.VarChar(255)
-  price      Decimal          @db.Decimal(10, 2)
-  startDate  DateTime         @db.Date
-  endDate    DateTime         @db.Date
-  status     SubscriptionStatus @default(active)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  planName  String             @db.VarChar(255)
+  price     Decimal            @db.Decimal(10, 2)
+  startDate DateTime           @db.Date
+  endDate   DateTime           @db.Date
+  status    SubscriptionStatus @default(active)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  @@index([userId], map: "subscriptions_userId_fkey")
   @@map("subscriptions")
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  parentId      Int
+  childminderId Int
+  bookingId     Int
+  rating        Int
+  review        String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  childminder   User     @relation("ChildminderReviews", fields: [childminderId], references: [id], onDelete: Cascade)
+  parent        User     @relation("ParentReviews", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId], map: "reviews_bookingId_fkey")
+  @@index([childminderId], map: "reviews_childminderId_fkey")
+  @@index([parentId], map: "reviews_parentId_fkey")
+  @@map("reviews")
+}
+
+model Notification {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  title     String             @db.VarChar(255)
+  message   String             @db.Text
+  type      notifications_type
+  isRead    Boolean            @default(false)
+  createdAt DateTime           @default(now())
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "notifications_userId_fkey")
+  @@map("notifications")
+}
+
+enum Role {
+  admin
+  parent
+  childminder
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum BookingStatus {
+  pending
+  accepted
+  rejected
+  completed
 }
 
 enum SubscriptionStatus {
@@ -169,40 +205,7 @@ enum SubscriptionStatus {
   expired
 }
 
-model Review {
-  id            Int      @id @default(autoincrement())
-  parentId      Int
-  childminderId Int
-  bookingId     Int
-  rating        Int      @db.Int
-  review        String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  parent        User     @relation("ParentReviews", fields: [parentId], references: [id], onDelete: Cascade)
-  childminder   User     @relation("ChildminderReviews", fields: [childminderId], references: [id], onDelete: Cascade)
-  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@map("reviews")
-}
-
-model Notification {
-  id        Int              @id @default(autoincrement())
-  userId    Int
-  title     String          @db.VarChar(255)
-  message   String          @db.Text
-  type      NotificationType
-  isRead    Boolean         @default(false)
-  createdAt DateTime        @default(now())
-
-  // Relations
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-enum NotificationType {
+enum notifications_type {
   booking
   message
   subscription

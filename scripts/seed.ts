@@ -5,18 +5,41 @@ import { createClerkClient } from '@clerk/clerk-sdk-node';
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 const prisma = new PrismaClient();
 
-// Dublin area locations
-const dublinLocations = [
-  { area: 'Dublin 1', coordinates: { lat: 53.3498, lng: -6.2603 } },
-  { area: 'Dublin 2', coordinates: { lat: 53.3398, lng: -6.2489 } },
-  { area: 'Dublin 3', coordinates: { lat: 53.3621, lng: -6.2186 } },
-  { area: 'Dublin 4', coordinates: { lat: 53.3279, lng: -6.2184 } },
-  { area: 'Dublin 5', coordinates: { lat: 53.3813, lng: -6.1746 } },
-  { area: 'Dublin 6', coordinates: { lat: 53.3087, lng: -6.2606 } },
-  { area: 'Dublin 7', coordinates: { lat: 53.3595, lng: -6.2921 } },
-  { area: 'Dublin 8', coordinates: { lat: 53.3375, lng: -6.2774 } },
-  { area: 'Dublin 9', coordinates: { lat: 53.3785, lng: -6.2419 } },
-  { area: 'Dublin 10', coordinates: { lat: 53.3637, lng: -6.3352 } }
+// Ireland counties and major towns
+const irelandLocations = [
+  // Leinster
+  { area: 'Dublin', coordinates: { lat: 53.3498, lng: -6.2603 } },
+  { area: 'Wicklow', coordinates: { lat: 52.9808, lng: -6.0446 } },
+  { area: 'Wexford', coordinates: { lat: 52.3369, lng: -6.4633 } },
+  { area: 'Kilkenny', coordinates: { lat: 52.6541, lng: -7.2448 } },
+  { area: 'Carlow', coordinates: { lat: 52.8408, lng: -6.9261 } },
+  { area: 'Kildare', coordinates: { lat: 53.1589, lng: -6.9091 } },
+  { area: 'Meath', coordinates: { lat: 53.6055, lng: -6.6564 } },
+  { area: 'Louth', coordinates: { lat: 53.9508, lng: -6.5406 } },
+  { area: 'Longford', coordinates: { lat: 53.7273, lng: -7.7948 } },
+  { area: 'Westmeath', coordinates: { lat: 53.5345, lng: -7.4653 } },
+  { area: 'Offaly', coordinates: { lat: 53.2390, lng: -7.7147 } },
+  { area: 'Laois', coordinates: { lat: 52.9943, lng: -7.3320 } },
+
+  // Munster
+  { area: 'Cork', coordinates: { lat: 51.8985, lng: -8.4756 } },
+  { area: 'Kerry', coordinates: { lat: 52.1540, lng: -9.5671 } },
+  { area: 'Limerick', coordinates: { lat: 52.6638, lng: -8.6267 } },
+  { area: 'Clare', coordinates: { lat: 52.9071, lng: -8.9807 } },
+  { area: 'Tipperary', coordinates: { lat: 52.4738, lng: -8.1619 } },
+  { area: 'Waterford', coordinates: { lat: 52.2593, lng: -7.1128 } },
+
+  // Connacht
+  { area: 'Galway', coordinates: { lat: 53.2707, lng: -9.0568 } },
+  { area: 'Mayo', coordinates: { lat: 53.8477, lng: -9.3518 } },
+  { area: 'Sligo', coordinates: { lat: 54.2697, lng: -8.4694 } },
+  { area: 'Leitrim', coordinates: { lat: 54.1249, lng: -8.0013 } },
+  { area: 'Roscommon', coordinates: { lat: 53.6324, lng: -8.1905 } },
+
+  // Ulster (Republic)
+  { area: 'Donegal', coordinates: { lat: 54.9549, lng: -7.7347 } },
+  { area: 'Cavan', coordinates: { lat: 53.9897, lng: -7.3633 } },
+  { area: 'Monaghan', coordinates: { lat: 54.2492, lng: -6.9683 } }
 ];
 
 // Child age ranges and activities
@@ -40,6 +63,9 @@ const specialNeeds = [
   'Speech delay'
 ];
 
+const languages = ['English', 'Irish', 'French', 'Spanish', 'Polish', 'Chinese'];
+const specializedCareTypes = ['Special Needs', 'Infant Care', 'After School', 'Emergency Care', 'Weekend Care'];
+
 async function createClerkUser(email: string, password: string, name: string, role: Role) {
   try {
     const clerkUser = await clerkClient.users.createUser({
@@ -60,7 +86,7 @@ async function createClerkUser(email: string, password: string, name: string, ro
 }
 
 function getRandomLocation() {
-  return dublinLocations[Math.floor(Math.random() * dublinLocations.length)];
+  return irelandLocations[Math.floor(Math.random() * irelandLocations.length)];
 }
 
 function getRandomBirthDate(minAge: number, maxAge: number) {
@@ -97,11 +123,11 @@ async function main() {
           password: 'managed-by-clerk',
           role: Role.parent,
           serviceArea: location.area,
-          availability: {
+          availability: JSON.stringify({
             weekdays: true,
             weekends: false,
             evenings: true
-          }
+          })
         }
       });
 
@@ -165,7 +191,7 @@ async function main() {
           hourlyRate: new Prisma.Decimal(20 + Math.floor(Math.random() * 15)),
           gardaVetted: true,
           tuslaRegistered: true,
-          availability: {
+          availability: JSON.stringify({
             monday: { morning: true, afternoon: true, evening: Math.random() > 0.5 },
             tuesday: { morning: true, afternoon: true, evening: Math.random() > 0.5 },
             wednesday: { morning: true, afternoon: true, evening: Math.random() > 0.5 },
@@ -173,7 +199,7 @@ async function main() {
             friday: { morning: true, afternoon: true, evening: Math.random() > 0.5 },
             saturday: Math.random() > 0.7,
             sunday: Math.random() > 0.8
-          }
+          })
         }
       });
     })

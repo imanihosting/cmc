@@ -26,7 +26,7 @@ START SPECIFICATION:
 - Don't hide or obscure modifications
 
 # Very Important 
-- DO not ever ever reset the Database only and what you are requested to add 
+- DO not ever ever reset the Database only add what you are requested to add 
 - Do not modify the authentication flow or Clerk integration
 - Do not alter the role selection and onboarding redirects
 - Do not change the project structure and file organization
