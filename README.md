@@ -1,36 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Childminder Connect Platform
 
-## Getting Started
+A comprehensive web application designed to connect parents with childminders, featuring secure authentication, role-based access control, and a modern user interface.
 
-First, run the development server:
+## 🚀 Features
 
+- User authentication with Clerk
+- Role-based access control (Parent/Childminder)
+- Secure onboarding process
+- Real-time messaging
+- Booking management
+- Review and rating system
+- Profile management
+- Subscription handling
+- Notification system
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 15.1.4, React 19.0.0
+- **Styling**: Tailwind CSS 3.4.1
+- **Authentication**: Clerk 6.9.9
+- **Database**: Prisma Client 6.2.1
+- **Type Safety**: TypeScript 5
+- **Linting**: ESLint 9
+- **UI Components**: Shadcn UI, Radix UI
+
+## 📋 Prerequisites
+
+- Node.js (Latest LTS version)
+- MySQL Database
+- Clerk Account for authentication
+- Environment variables setup
+
+## 🔧 Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone [repository-url]
+cd [project-directory]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+Create a `.env` file with the following variables:
+```env
+DATABASE_URL="mysql://..."
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+CLERK_WEBHOOK_SECRET=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run database migrations:
+```bash
+npx prisma migrate dev
+```
 
-## Learn More
+5. Start the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🔌 API Endpoints
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Authentication Webhooks
+- `POST /api/webhooks/clerk`
+  - Handles Clerk authentication webhooks
+  - Events: user.created, user.updated, user.deleted
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### User Management
+- `GET /api/users`
+  - Fetch user information
+- `POST /api/role`
+  - Update user role (parent/childminder)
 
-## Deploy on Vercel
+### Onboarding
+- `POST /api/onboarding/parent`
+  - Complete parent onboarding process
+- `POST /api/onboarding/childminder`
+  - Complete childminder onboarding process
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Protected Routes
+- `/portal/parent/*`
+  - Parent dashboard and related functionalities
+- `/portal/childminder/*`
+  - Childminder dashboard and related functionalities
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔐 Authentication Flow
+
+1. User signs up/signs in through Clerk
+2. User selects role (parent/childminder)
+3. User completes role-specific onboarding
+4. User is redirected to appropriate portal
+
+## 🔄 Middleware
+
+The application uses Clerk middleware for:
+- Route protection
+- Role-based access control
+- Authentication state management
+- Redirection logic
+
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── api/           # API routes
+│   ├── onboarding/    # Onboarding flows
+│   ├── portal/        # User portals
+│   ├── role/          # Role selection
+│   └── sign-in/       # Authentication pages
+├── components/        # Reusable UI components
+├── lib/              # Utility functions
+├── prisma/           # Database schema and migrations
+└── types/            # TypeScript type definitions
+```
+
+## 🛡️ Security
+
+- Authentication handled by Clerk
+- Protected API routes
+- Secure webhook handling
+- Environment variable protection
+- Type-safe database queries
+
+## 🧪 Development
+
+```bash
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run linting
+npm run lint
+```
+
+## 📄 License
+
+[Your License Here]
+
+## 👥 Contributing
+
+[Your Contributing Guidelines]
