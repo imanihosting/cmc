@@ -188,22 +188,25 @@ export default function ParentDashboard() {
     }))
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-sky-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Parent Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back!</h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-8">Here's what's happening with your childcare.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {quickStats.map((stat, index) => (
             <AnimatedCard 
               key={index}
-              className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                    <stat.icon className="h-6 w-6 text-purple-600 dark:text-purple-300" />
+                  <div className="p-3 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-xl shadow-inner">
+                    <stat.icon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
                   </div>
                 </div>
                 <div>
@@ -217,21 +220,110 @@ export default function ParentDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
           >
-            <CardHeader>
+            <CardHeader className="border-b border-gray-100 dark:border-gray-700">
               <CardTitle className="flex items-center justify-between">
-                <span>Upcoming Bookings</span>
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/bookings'}>View All</Button>
+                <div className="flex items-center space-x-2">
+                  <Star className="h-5 w-5 text-purple-500" />
+                  <span>Recommended Childminders</span>
+                </div>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/parent/smart-match'}>Find More</Button>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <div className="space-y-4">
+                {isLoading ? (
+                  <div className="text-center py-4 text-gray-500">Loading recommendations...</div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/50 dark:to-indigo-900/50 rounded-xl shadow-sm">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                          <Star className="h-6 w-6 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white">Smart Matching Available</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Find the perfect childminder based on your preferences
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md"
+                        onClick={() => window.location.href = '/portal/parent/smart-match'}
+                      >
+                        Start Matching
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard 
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+          >
+            <CardHeader className="border-b border-gray-100 dark:border-gray-700">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="h-5 w-5 text-purple-500" />
+                  <span>Recent Messages</span>
+                </div>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/messages'}>View All</Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
+                {recentMessages.map((message) => (
+                  <div key={message.id} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-750 rounded-xl shadow-sm">
+                    <Avatar className="ring-2 ring-purple-100 dark:ring-purple-900">
+                      <AvatarFallback className="bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900">{message.sender.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 space-y-1">
+                      <p className="font-semibold text-gray-900 dark:text-white">{message.sender.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{message.content}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = `/portal/messages/${message.sender.id}`}>Reply</Button>
+                  </div>
+                ))}
+                {messages.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">No messages</div>
+                )}
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard 
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+          >
+            <CardHeader className="border-b border-gray-100 dark:border-gray-700">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <CalendarDays className="h-5 w-5 text-purple-500" />
+                  <span>Upcoming Bookings</span>
+                </div>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/bookings'}>View All</Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4 max-h-[300px] overflow-y-auto">
                 {upcomingBookings.map((booking) => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div key={booking.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/50 dark:to-indigo-900/50 rounded-xl shadow-sm">
                     <div className="flex items-center space-x-4">
                       <CalendarDays className="h-10 w-10 text-purple-500" />
                       <div>
@@ -255,24 +347,28 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.5 }}
+            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
           >
-            <CardHeader>
+            <CardHeader className="border-b border-gray-100 dark:border-gray-700">
               <CardTitle className="flex items-center justify-between">
-                <span>Children Profiles</span>
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/children'}>Manage</Button>
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-purple-500" />
+                  <span>Children Profiles</span>
+                </div>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/children'}>Manage</Button>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-6">
+              <div className="space-y-4 max-h-[300px] overflow-y-auto">
                 {children.map((child) => (
-                  <div key={child.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div key={child.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/50 dark:to-indigo-900/50 rounded-xl shadow-sm">
                     <div className="flex items-center space-x-4">
-                      <Avatar>
-                        <AvatarFallback>{child.name[0]}</AvatarFallback>
+                      <Avatar className="ring-2 ring-purple-100 dark:ring-purple-900">
+                        <AvatarFallback className="bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900">{child.name[0]}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-semibold text-gray-900 dark:text-white">{child.name}</p>
@@ -281,7 +377,7 @@ export default function ParentDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => window.location.href = `/portal/children/${child.id}`}>Update</Button>
+                    <Button variant="outline" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = `/portal/children/${child.id}`}>Update</Button>
                   </div>
                 ))}
                 {children.length === 0 && (
@@ -292,56 +388,26 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Recent Messages</span>
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/messages'}>View All</Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentMessages.map((message) => (
-                  <div key={message.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <Avatar>
-                      <AvatarFallback>{message.sender.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-semibold text-gray-900 dark:text-white">{message.sender.name}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{message.content}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => window.location.href = `/portal/messages/${message.sender.id}`}>Reply</Button>
-                  </div>
-                ))}
-                {messages.length === 0 && (
-                  <div className="text-center py-4 text-gray-500">No messages</div>
-                )}
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
+            whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
           >
-            <CardHeader>
+            <CardHeader className="border-b border-gray-100 dark:border-gray-700">
               <CardTitle className="flex items-center justify-between">
-                <span>Notifications</span>
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = '/portal/notifications'}>View All</Button>
+                <div className="flex items-center space-x-2">
+                  <Bell className="h-5 w-5 text-purple-500" />
+                  <span>Notifications</span>
+                </div>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/notifications'}>View All</Button>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-6">
+              <div className="space-y-4 max-h-[300px] overflow-y-auto">
                 {notifications.map((notification) => (
-                  <div key={notification.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full">
+                  <div key={notification.id} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/50 dark:to-indigo-900/50 rounded-xl shadow-sm">
+                    <div className="p-2 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-full">
                       {notification.type === 'system' && <Bell className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
                       {notification.type === 'booking' && <CalendarDays className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
                       {notification.type === 'subscription' && <Star className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
