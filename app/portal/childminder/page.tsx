@@ -60,6 +60,7 @@ interface Review {
 interface Message {
   id: string;
   sender: string;
+  senderId: string;
   message: string;
   time: string;
 }
@@ -552,27 +553,55 @@ export default function ChildminderDashboard() {
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[300px] pr-4">
-                {recentMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className="p-4 rounded-lg mb-3 bg-gray-50 dark:bg-gray-700"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {message.sender && message.sender.length > 0 ? message.sender[0] : 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {message.sender || 'Unknown Sender'}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{message.time}</p>
-                      </div>
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-300 pl-11">{message.message}</p>
+                {recentMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-[200px] text-center p-4">
+                    <MessageSquare className="h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                      No Messages Yet
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      New messages will appear here.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  recentMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className="p-4 rounded-lg mb-3 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 cursor-pointer transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push('/portal/childminder/messages');
+                      }}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar 
+                          className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/portal/parent/${message.senderId}`);
+                          }}
+                        >
+                          <AvatarFallback>
+                            {message.sender && message.sender.length > 0 ? message.sender[0] : 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p 
+                            className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/portal/parent/${message.senderId}`);
+                            }}
+                          >
+                            {message.sender || 'Unknown Sender'}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{message.time}</p>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-300 pl-11">{message.message}</p>
+                    </div>
+                  ))
+                )}
               </ScrollArea>
             </CardContent>
           </Card>

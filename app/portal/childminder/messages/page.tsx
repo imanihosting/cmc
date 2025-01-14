@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { Send, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useRouter } from 'next/navigation';
 
 interface Message {
   id: number;
@@ -41,6 +42,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollInterval = useRef<NodeJS.Timeout | undefined>(undefined);
+  const router = useRouter();
 
   // Fetch conversations
   const fetchConversations = async () => {
@@ -152,12 +154,26 @@ export default function MessagesPage() {
                   onClick={() => setSelectedConversation(conversation)}
                 >
                   <div className="flex items-center space-x-3">
-                    <Avatar>
+                    <Avatar 
+                      className="cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/portal/parent/${conversation.parentId}`);
+                      }}
+                    >
                       <AvatarImage src={conversation.parent.profilePicture || undefined} />
                       <AvatarFallback>{conversation.parent.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{conversation.parent.name}</p>
+                      <p 
+                        className="font-medium truncate hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/portal/parent/${conversation.parentId}`);
+                        }}
+                      >
+                        {conversation.parent.name}
+                      </p>
                       <p className="text-sm text-gray-500 truncate">
                         {conversation.messages && conversation.messages.length > 0 
                           ? conversation.messages[conversation.messages.length - 1]?.content 
@@ -178,12 +194,20 @@ export default function MessagesPage() {
               {/* Chat Header */}
               <div className="pb-4 border-b">
                 <div className="flex items-center space-x-3">
-                  <Avatar>
+                  <Avatar 
+                    className="cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                    onClick={() => router.push(`/portal/parent/${selectedConversation.parentId}`)}
+                  >
                     <AvatarImage src={selectedConversation.parent.profilePicture || undefined} />
                     <AvatarFallback>{selectedConversation.parent.name[0]}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold">{selectedConversation.parent.name}</h3>
+                    <h3 
+                      className="font-semibold hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
+                      onClick={() => router.push(`/portal/parent/${selectedConversation.parentId}`)}
+                    >
+                      {selectedConversation.parent.name}
+                    </h3>
                     <p className="text-sm text-gray-500">Parent</p>
                   </div>
                 </div>
