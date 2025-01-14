@@ -4,7 +4,7 @@ import { Baby } from 'lucide-react'
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 import { SignedOut, SignedIn, UserButton } from '@clerk/nextjs'
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from '@/components/ui/toaster'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -26,7 +26,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className={`${poppins.variable} font-sans`}>
         <body className="min-h-screen flex flex-col bg-gray-50">
-          <Toaster position="top-center" />
+          <Toaster />
           <header className="fixed w-full z-50 transition-all duration-300 px-4 py-6">
             <nav className="max-w-6xl mx-auto bg-white/10 backdrop-blur-md rounded-full shadow-lg border border-white/20">
               <div className="px-6 py-3 flex items-center justify-between">
