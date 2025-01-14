@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from 'sonner'
-import { UserCircle, MapPin, Phone, Mail, Settings, Save } from 'lucide-react'
+import { UserCircle, MapPin, Phone, Mail, Settings, Save, Check } from 'lucide-react'
 
 interface ParentProfile {
   id: string
@@ -38,6 +38,7 @@ export default function ParentProfilePage() {
   const { user } = useUser()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [profile, setProfile] = useState<ParentProfile | null>(null)
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function ParentProfilePage() {
     if (!profile) return
 
     setSaving(true)
+    setSaveSuccess(false)
     try {
       const response = await fetch('/api/parent/profile', {
         method: 'PUT',
@@ -70,10 +72,34 @@ export default function ParentProfilePage() {
         body: JSON.stringify(profile),
       })
 
-      if (!response.ok) throw new Error('Failed to update profile')
-      toast.success('Profile updated successfully')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update profile')
+      }
+
+      setSaveSuccess(true)
+      toast.success('Profile updated successfully', {
+        description: 'Your changes have been saved.',
+        action: {
+          label: 'Dismiss',
+          onClick: () => console.log('Dismissed')
+        },
+        duration: 3000,
+      })
+
+      // Reset success state after 2 seconds
+      setTimeout(() => {
+        setSaveSuccess(false)
+      }, 2000)
     } catch (error) {
-      toast.error('Failed to update profile')
+      toast.error('Failed to update profile', {
+        description: error instanceof Error ? error.message : 'Please try again later.',
+        action: {
+          label: 'Try Again',
+          onClick: () => handleSubmit(e)
+        },
+        duration: 5000,
+      })
       console.error(error)
     } finally {
       setSaving(false)
@@ -328,12 +354,21 @@ export default function ParentProfilePage() {
             <Button
               type="submit"
               disabled={saving}
-              className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-8"
+              className={`${
+                saveSuccess 
+                  ? 'bg-green-500 hover:bg-green-600' 
+                  : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600'
+              } text-white px-8 transition-all duration-300`}
             >
               {saving ? (
                 <span className="flex items-center gap-2">
                   <Save className="h-4 w-4 animate-spin" />
                   Saving...
+                </span>
+              ) : saveSuccess ? (
+                <span className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  Saved!
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
