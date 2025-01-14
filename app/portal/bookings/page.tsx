@@ -16,6 +16,7 @@ import { format } from 'date-fns'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from 'react-hot-toast'
+import { showSuccessToast, showErrorToast, BOOKING_SUCCESS, BOOKING_ERROR } from '@/lib/utils/toast'
 
 interface Child {
   id: number
@@ -27,6 +28,14 @@ interface Childminder {
   name: string
   profilePicture: string | null
   hourlyRate: number
+}
+
+interface BookingData {
+  childminderId: number
+  childId: number
+  startTime: string
+  endTime: string
+  additionalInfo?: string
 }
 
 const AnimatedCard = motion(Card)
@@ -43,6 +52,7 @@ export default function BookingPage() {
   const [children, setChildren] = useState<Child[]>([])
   const [childminders, setChildminders] = useState<Childminder[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,45 +92,57 @@ export default function BookingPage() {
   const duration = calculateDuration()
   const totalCost = selectedChildminderData ? (duration / 60) * selectedChildminderData.hourlyRate : 0
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!date || !startTime || !endTime || !selectedChild || !selectedChildminder) {
-      toast.error('Please fill in all required fields')
+      showErrorToast('Missing Information', 'Please fill in all required fields')
       return
     }
 
+    const startDateTime = new Date(date)
+    const [startHour, startMinute] = startTime.split(':')
+    startDateTime.setHours(parseInt(startHour), parseInt(startMinute))
+
+    const endDateTime = new Date(date)
+    const [endHour, endMinute] = endTime.split(':')
+    endDateTime.setHours(parseInt(endHour), parseInt(endMinute))
+
+    const bookingData: BookingData = {
+      childminderId: parseInt(selectedChildminder),
+      childId: parseInt(selectedChild),
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      additionalInfo,
+    }
+
+    setSubmitting(true)
     try {
-      const startDateTime = new Date(date)
-      const [startHour, startMinute] = startTime.split(':')
-      startDateTime.setHours(parseInt(startHour), parseInt(startMinute))
-
-      const endDateTime = new Date(date)
-      const [endHour, endMinute] = endTime.split(':')
-      endDateTime.setHours(parseInt(endHour), parseInt(endMinute))
-
-      const response = await fetch('/api/bookings/create', {
+      const response = await fetch('/api/bookings', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          childminderId: parseInt(selectedChildminder),
-          childId: parseInt(selectedChild),
-          startTime: startDateTime.toISOString(),
-          endTime: endDateTime.toISOString(),
-          additionalInfo,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create booking')
+        const error = await response.json()
+        throw new Error(error.error || BOOKING_ERROR)
       }
 
-      toast.success('Booking request sent successfully')
+      showSuccessToast(BOOKING_SUCCESS, 'Your booking has been confirmed.')
       router.push('/portal/bookings')
     } catch (error) {
-      console.error('Error creating booking:', error)
-      toast.error('Failed to create booking')
+      showErrorToast(
+        BOOKING_ERROR,
+        error instanceof Error ? error.message : 'Please try again later.',
+        {
+          action: {
+            label: 'Try Again',
+            onClick: () => handleBookingSubmit(e)
+          }
+        }
+      )
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -143,7 +165,7 @@ export default function BookingPage() {
               <CardTitle>Booking Form</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleBookingSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="childminder" className="block mb-2">Select Childminder</Label>
                   <Select onValueChange={setSelectedChildminder} required>
