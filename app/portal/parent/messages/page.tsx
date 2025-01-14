@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,17 +9,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { MessageCircle, Send, Search } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
+import { toast } from 'sonner'
 
 interface Message {
   id: number
   sender: {
-    id: string
+    id: number
     name: string
     profilePicture?: string
+    clerkId: string
   }
   content: string
   sentAt: string
-  read: boolean
 }
 
 interface Conversation {
@@ -28,6 +29,7 @@ interface Conversation {
     id: number
     name: string
     profilePicture?: string
+    clerkId: string
   }
   lastMessage?: Message
   unreadCount: number
@@ -43,6 +45,16 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -51,6 +63,9 @@ export default function MessagesPage() {
       try {
         setIsLoading(true)
         const res = await fetch('/api/conversations')
+        if (!res.ok) {
+          throw new Error('Failed to fetch conversations')
+        }
         const data = await res.json()
         if (Array.isArray(data)) {
           setConversations(data)
@@ -78,6 +93,9 @@ export default function MessagesPage() {
       
       try {
         const res = await fetch(`/api/messages?conversationId=${selectedConversation.id}`)
+        if (!res.ok) {
+          throw new Error('Failed to fetch messages')
+        }
         const data = await res.json()
         if (Array.isArray(data)) {
           setMessages(data)
@@ -93,6 +111,9 @@ export default function MessagesPage() {
 
     if (selectedConversation) {
       fetchMessages()
+      // Set up polling for new messages
+      const pollInterval = setInterval(fetchMessages, 5000)
+      return () => clearInterval(pollInterval)
     }
   }, [selectedConversation])
 
@@ -103,6 +124,12 @@ export default function MessagesPage() {
 
   if (!user) {
     window.location.href = '/sign-in'
+    return null
+  }
+
+  const userRole = user.publicMetadata.role as string
+  if (userRole !== 'parent') {
+    window.location.href = '/portal/' + userRole
     return null
   }
 
@@ -129,15 +156,23 @@ export default function MessagesPage() {
         }),
       })
 
-      if (res.ok) {
-        const message = await res.json()
-        setMessages(prev => [...prev, message])
-        setNewMessage('')
+      if (!res.ok) {
+        throw new Error('Failed to send message')
       }
+
+      const message = await res.json()
+      setMessages(prev => [...prev, message])
+      setNewMessage('')
+      scrollToBottom()
     } catch (err) {
       console.error('Error sending message:', err)
+      toast.error('Failed to send message. Please try again.')
     }
   }
+
+  const filteredConversations = conversations.filter(conversation =>
+    conversation.participant?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-sky-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 p-8">
@@ -155,43 +190,51 @@ export default function MessagesPage() {
                   <Input
                     placeholder="Search conversations..."
                     className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
               </CardHeader>
               <CardContent className="p-0 max-h-[600px] overflow-y-auto">
-                {conversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                      selectedConversation?.id === conversation.id ? 'bg-purple-50 dark:bg-purple-900/50' : ''
-                    }`}
-                    onClick={() => setSelectedConversation(conversation)}
-                  >
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={conversation.participant?.profilePicture || ''} />
-                        <AvatarFallback>{conversation.participant?.name?.[0] || '?'}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                            {conversation.participant?.name || 'Unknown User'}
-                          </h3>
-                          {conversation.unreadCount > 0 && (
-                            <span className="inline-flex items-center justify-center h-5 w-5 text-xs font-medium text-white bg-purple-600 rounded-full">
-                              {conversation.unreadCount}
-                            </span>
+                {filteredConversations.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                  </div>
+                ) : (
+                  filteredConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                        selectedConversation?.id === conversation.id ? 'bg-purple-50 dark:bg-purple-900/50' : ''
+                      }`}
+                      onClick={() => setSelectedConversation(conversation)}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={conversation.participant?.profilePicture || ''} />
+                          <AvatarFallback>{conversation.participant?.name?.[0] || '?'}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              {conversation.participant?.name || 'Loading...'}
+                            </h3>
+                            {conversation.unreadCount > 0 && (
+                              <span className="inline-flex items-center justify-center h-5 w-5 text-xs font-medium text-white bg-purple-600 rounded-full">
+                                {conversation.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                          {conversation.lastMessage && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                              {conversation.lastMessage.content}
+                            </p>
                           )}
                         </div>
-                        {conversation.lastMessage && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {conversation.lastMessage.content}
-                          </p>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </AnimatedCard>
           </div>
@@ -208,7 +251,7 @@ export default function MessagesPage() {
                     </Avatar>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {selectedConversation.participant?.name || 'Unknown User'}
+                        {selectedConversation.participant?.name || 'Loading...'}
                       </h3>
                     </div>
                   </div>
@@ -217,11 +260,11 @@ export default function MessagesPage() {
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${message.sender.id === user?.id ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${message.sender.clerkId === user.id ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
                         className={`max-w-[70%] rounded-lg p-3 ${
-                          message.sender.id === user?.id
+                          message.sender.clerkId === user.id
                             ? 'bg-purple-600 text-white'
                             : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                         }`}
@@ -233,6 +276,7 @@ export default function MessagesPage() {
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </CardContent>
                 <div className="border-t border-gray-100 dark:border-gray-700 p-4">
                   <div className="flex space-x-4">
@@ -242,15 +286,16 @@ export default function MessagesPage() {
                       placeholder="Type your message..."
                       className="flex-1"
                       onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
                           handleSendMessage()
                         }
                       }}
                     />
                     <Button
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
                       className="bg-purple-600 hover:bg-purple-700 text-white"
+                      disabled={!newMessage.trim()}
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -264,7 +309,7 @@ export default function MessagesPage() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                     Select a Conversation
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500">
                     Choose a conversation from the list to start messaging
                   </p>
                 </div>

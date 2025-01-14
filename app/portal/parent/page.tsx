@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, MessageCircle, Star, Bell, Users, BookOpen, ChevronRight, Mail } from 'lucide-react'
+import { CalendarDays, MessageCircle, Star, Bell, Users, BookOpen, ChevronRight, Mail, UserCircle } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
 interface Booking {
@@ -206,11 +206,23 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-sky-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back {user.firstName || user.username}!</h1>
-        <p className="text-gray-600 dark:text-gray-300 mb-8">Here's what's happening with your childcare.</p>
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back {user?.firstName || user?.username}!</h1>
+            <p className="text-gray-600 dark:text-gray-300">Here's what's happening with your childcare.</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => window.location.href = '/portal/parent/profile'}
+          >
+            <UserCircle className="w-4 h-4" />
+            View Profile
+          </Button>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quickStats.map((stat, index) => (
             <AnimatedCard 
               key={index}
