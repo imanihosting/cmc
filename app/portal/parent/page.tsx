@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { CalendarDays, MessageCircle, Star, Bell, Users, BookOpen, ChevronRight, Mail, UserCircle } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
+import { useRouter } from 'next/navigation'
 
 interface Booking {
   id: number
@@ -67,6 +68,7 @@ export default function ParentDashboard() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -204,6 +206,10 @@ export default function ParentDashboard() {
       time: formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })
     }))
 
+  const handleCardClick = (path: string) => {
+    router.push(path)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-sky-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 p-8">
       <div className="max-w-6xl mx-auto">
@@ -222,29 +228,106 @@ export default function ParentDashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {quickStats.map((stat, index) => (
-            <AnimatedCard 
-              key={index}
-              className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
-              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
-                    <stat.icon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+          <AnimatedCard
+            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            onClick={() => handleCardClick('/portal/bookings')}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
+                  <BookOpen className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{stat.title}</p>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{bookings.filter(b => b.status === 'accepted').length}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Active Bookings</p>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard
+            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            onClick={() => handleCardClick('/portal/messages')}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
+                  <Mail className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
                 </div>
-              </CardContent>
-            </AnimatedCard>
-          ))}
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{conversations.reduce((acc: number, conv: Conversation) => acc + conv.unreadCount, 0)}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Unread Messages</p>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard
+            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            onClick={() => handleCardClick('/portal/notifications')}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
+                  <Bell className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{notifications.length}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Recent Notifications</p>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard
+            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            onClick={() => handleCardClick('/portal/children')}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
+                  <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{children.length}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Children Profiles</p>
+              </div>
+            </CardContent>
+          </AnimatedCard>
+
+          <AnimatedCard
+            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            onClick={() => handleCardClick('/portal/parent/profile')}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
+                  <UserCircle className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{user?.firstName || user?.username}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">View Profile</p>
+              </div>
+            </CardContent>
+          </AnimatedCard>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
