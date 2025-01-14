@@ -22,6 +22,10 @@ interface SmartMatchQuery {
   maxDistance?: number;
   lastMinute?: boolean;
   specializedCare?: string[];
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
 function calculateDistance(lat1: number | Prisma.Decimal | null, lon1: number | Prisma.Decimal | null, lat2: number | Prisma.Decimal | null, lon2: number | Prisma.Decimal | null): number {
@@ -60,7 +64,14 @@ export async function POST(request: Request) {
 
     const query: SmartMatchQuery = await request.json();
     console.log('Search query:', query);
-    console.log('Parent coordinates:', { lat: parent.latitude, lon: parent.longitude }); // Debug parent coordinates
+
+    // Use coordinates from request if available, otherwise use parent's stored coordinates
+    const searchCoordinates = query.coordinates || {
+      latitude: parent.latitude ? Number(parent.latitude) : null,
+      longitude: parent.longitude ? Number(parent.longitude) : null
+    };
+    
+    console.log('Search coordinates:', searchCoordinates);
 
     // Base query for childminders
     const childminders = await prisma.user.findMany({
@@ -88,39 +99,47 @@ export async function POST(request: Request) {
     const scoredChildminders = childminders
       .map(childminder => {
         let score = 0;
-        const preferences = parent.matchPreferences ? 
-          JSON.parse(parent.matchPreferences as string) : {
-            weights: {
-              distance: 0.3,
-              experience: 0.2,
-              rating: 0.2,
-              personality: 0.3
-            }
-          };
+        let preferences;
+        
+        try {
+          preferences = parent.matchPreferences ? 
+            (typeof parent.matchPreferences === 'string' ? 
+              JSON.parse(parent.matchPreferences) : 
+              parent.matchPreferences) : null;
+        } catch (e) {
+          console.error('Error parsing match preferences:', e);
+          preferences = null;
+        }
+
+        // Default weights if preferences are not set or invalid
+        const weights = preferences?.weights || {
+          distance: 0.3,
+          experience: 0.2,
+          rating: 0.2,
+          personality: 0.3
+        };
 
         // Distance score - only if maxDistance is specified and coordinates exist
-        const distance = calculateDistance(parent.latitude, parent.longitude, childminder.latitude, childminder.longitude);
-        if (query.maxDistance) {
-          // Only apply distance filtering if both parent and childminder have coordinates
-          if (parent.latitude && parent.longitude && childminder.latitude && childminder.longitude) {
-            if (distance > query.maxDistance) {
-              return null; // Filter out if too far
-            }
-            score += (1 - distance / query.maxDistance) * preferences.weights.distance;
-          }
-          // If coordinates are missing, don't filter out but don't add distance score
+        const distance = calculateDistance(
+          searchCoordinates.latitude,
+          searchCoordinates.longitude,
+          childminder.latitude ? Number(childminder.latitude) : null,
+          childminder.longitude ? Number(childminder.longitude) : null
+        );
+        if (query.maxDistance && distance !== Infinity) {
+          score += (1 - distance / query.maxDistance) * weights.distance;
         }
 
         // Experience score
         if (childminder.experience) {
           const yearsExp = childminder.experience.length / 100; // Simple proxy for experience
-          score += Math.min(yearsExp / 10, 1) * preferences.weights.experience;
+          score += Math.min(yearsExp / 10, 1) * weights.experience;
         }
 
         // Rating score
         if (childminder.childminderReviews.length > 0) {
           const avgRating = childminder.childminderReviews.reduce((acc: number, rev) => acc + rev.rating, 0) / childminder.childminderReviews.length;
-          score += (avgRating / 5) * preferences.weights.rating;
+          score += (avgRating / 5) * weights.rating;
         }
 
         // Personality match score - only if personalityTraits are specified
@@ -135,11 +154,35 @@ export async function POST(request: Request) {
             ).length;
             
             if (matchingTraits > 0) {
-              score += (matchingTraits / query.personalityTraits.length) * preferences.weights.personality;
+              score += (matchingTraits / query.personalityTraits.length) * weights.personality;
             }
           } catch (e) {
             console.error('Error parsing personality traits:', e);
           }
+        }
+
+        // Specialized care match
+        if (query.specializedCare?.length && childminder.specializedCare) {
+          try {
+            const childminderCare = Array.isArray(childminder.specializedCare) 
+              ? childminder.specializedCare 
+              : JSON.parse(childminder.specializedCare as string);
+            
+            const matchingCare = query.specializedCare.filter(care => 
+              childminderCare.includes(care)
+            ).length;
+            
+            if (matchingCare > 0) {
+              score += (matchingCare / query.specializedCare.length) * 0.2; // 20% weight for specialized care
+            }
+          } catch (e) {
+            console.error('Error parsing specialized care:', e);
+          }
+        }
+
+        // Last minute availability match
+        if (query.lastMinute && childminder.lastMinuteAvailability) {
+          score += 0.1; // 10% boost for last minute availability match
         }
 
         // If no specific criteria were provided or no scores were added, give a base score
@@ -154,7 +197,16 @@ export async function POST(request: Request) {
           hourlyRate: childminder.hourlyRate,
           experience: childminder.experience,
           qualifications: childminder.qualifications,
-          personalityTraits: childminder.personalityTraits,
+          personalityTraits: childminder.personalityTraits ? 
+            (Array.isArray(childminder.personalityTraits) ? 
+              childminder.personalityTraits : 
+              JSON.parse(childminder.personalityTraits as string)
+            ) : [],
+          specializedCare: childminder.specializedCare ?
+            (Array.isArray(childminder.specializedCare) ?
+              childminder.specializedCare :
+              JSON.parse(childminder.specializedCare as string)
+            ) : [],
           score,
           distance: distance === Infinity ? null : distance
         };
@@ -162,8 +214,16 @@ export async function POST(request: Request) {
       .filter((cm): cm is NonNullable<typeof cm> => cm !== null)
       .sort((a, b) => b.score - a.score);
 
-    console.log('Scored childminders:', scoredChildminders.length); // Debug log
-    return NextResponse.json(scoredChildminders);
+    console.log('Scored childminders:', scoredChildminders.length);
+    
+    // Map the response to ensure proper JSON serialization
+    const response = scoredChildminders.map(cm => ({
+      ...cm,
+      hourlyRate: cm.hourlyRate ? Number(cm.hourlyRate) : null,
+      distance: cm.distance ? Number(cm.distance) : null
+    }));
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error in smart matching:', error);
     return NextResponse.json({ error: 'Failed to perform smart matching' }, { status: 500 });

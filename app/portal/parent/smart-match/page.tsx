@@ -17,10 +17,11 @@ interface Childminder {
   id: number;
   name: string;
   profilePicture: string | null;
-  hourlyRate: number;
+  hourlyRate: number | null;
   experience: string | null;
   qualifications: string | null;
   personalityTraits: string[];
+  specializedCare: string[];
   score: number;
   distance: number | null;
 }
@@ -55,6 +56,25 @@ export default function SmartMatchPage() {
   const [lastMinute, setLastMinute] = useState(false)
   const [childminders, setChildminders] = useState<Childminder[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [coordinates, setCoordinates] = useState<{latitude: number, longitude: number} | null>(null)
+
+  useEffect(() => {
+    // Get user's location when component mounts
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          toast.error('Please enable location services for better matching');
+        }
+      );
+    }
+  }, []);
 
   const handleSearch = async () => {
     setIsLoading(true)
@@ -68,7 +88,8 @@ export default function SmartMatchPage() {
           maxDistance,
           personalityTraits: selectedTraits,
           specializedCare: selectedCare,
-          lastMinute
+          lastMinute,
+          coordinates
         }),
       })
 
@@ -217,6 +238,18 @@ export default function SmartMatchPage() {
                           {childminder.personalityTraits.map(trait => (
                             <Badge key={trait} variant="secondary">
                               {trait}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {childminder.specializedCare?.length > 0 && (
+                      <div className="mt-2">
+                        <div className="flex flex-wrap gap-2">
+                          {childminder.specializedCare.map(care => (
+                            <Badge key={care} variant="outline" className="bg-blue-50">
+                              {care}
                             </Badge>
                           ))}
                         </div>
