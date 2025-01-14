@@ -212,8 +212,8 @@ export default function ParentDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-sky-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-gray-800 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back {user?.firstName || user?.username}!</h1>
             <p className="text-gray-600 dark:text-gray-300">Here's what's happening with your childcare.</p>
@@ -231,7 +231,7 @@ export default function ParentDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnimatedCard
             className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
-            onClick={() => handleCardClick('/portal/bookings')}
+            onClick={() => handleCardClick('/portal/parent/bookings')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -251,7 +251,7 @@ export default function ParentDashboard() {
 
           <AnimatedCard
             className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
-            onClick={() => handleCardClick('/portal/messages')}
+            onClick={() => handleCardClick('/portal/parent/messages')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -271,7 +271,7 @@ export default function ParentDashboard() {
 
           <AnimatedCard
             className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
-            onClick={() => handleCardClick('/portal/notifications')}
+            onClick={() => handleCardClick('/portal/parent/notifications')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -291,7 +291,7 @@ export default function ParentDashboard() {
 
           <AnimatedCard
             className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
-            onClick={() => handleCardClick('/portal/children')}
+            onClick={() => handleCardClick('/portal/parent/children')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
