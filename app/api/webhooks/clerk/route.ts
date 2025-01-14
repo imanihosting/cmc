@@ -58,6 +58,22 @@ export async function POST(request: Request) {
     }
 
     try {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: primaryEmail }
+      });
+
+      if (existingUser) {
+        // If user exists with this email but different clerkId, update the clerkId
+        if (existingUser.clerkId !== id) {
+          const updatedUser = await prisma.user.update({
+            where: { email: primaryEmail },
+            data: { clerkId: id }
+          });
+          return NextResponse.json({ user: updatedUser }, { status: 200 });
+        }
+        return NextResponse.json({ user: existingUser }, { status: 200 });
+      }
+
       const user = await prisma.user.create({
         data: {
           clerkId: id,
