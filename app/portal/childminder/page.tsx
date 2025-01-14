@@ -7,10 +7,16 @@ import { Card } from "@/components/ui/card";
 import { CardContent } from "@/components/ui/card";
 import { CardHeader } from "@/components/ui/card";
 import { CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
-import { CheckCircle, XCircle, Star, Clock, Users, Calendar, DollarSign } from "lucide-react";
+import { 
+  CheckCircle, XCircle, Star, Clock, Users, Calendar, 
+  DollarSign, TrendingUp, Bell, MessageSquare, Shield
+} from "lucide-react";
 import { useState, useEffect } from "react";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Interfaces
 interface QuickStats {
@@ -26,6 +32,7 @@ interface QuickStat {
   key: string;
   icon: any;
   prefix?: string;
+  gradient: string;
 }
 
 interface Booking {
@@ -54,12 +61,33 @@ interface Message {
 // Animated card component
 const AnimatedCard = motion(Card);
 
-// Quick stats configuration
+// Enhanced quick stats configuration
 const quickStatsConfig: QuickStat[] = [
-  { title: "Total Bookings", key: "totalBookings", icon: Calendar },
-  { title: "Active Children", key: "activeChildren", icon: Users },
-  { title: "Rating", key: "rating", icon: Star },
-  { title: "Hourly Rate", key: "hourlyRate", icon: DollarSign, prefix: "€" }
+  { 
+    title: "Total Bookings", 
+    key: "totalBookings", 
+    icon: Calendar,
+    gradient: "from-blue-600 to-blue-400"
+  },
+  { 
+    title: "Active Children", 
+    key: "activeChildren", 
+    icon: Users,
+    gradient: "from-green-600 to-green-400"
+  },
+  { 
+    title: "Rating", 
+    key: "rating", 
+    icon: Star,
+    gradient: "from-yellow-600 to-yellow-400"
+  },
+  { 
+    title: "Hourly Rate", 
+    key: "hourlyRate", 
+    icon: DollarSign, 
+    prefix: "€",
+    gradient: "from-purple-600 to-purple-400"
+  }
 ];
 
 export default function ChildminderDashboard() {
@@ -210,16 +238,32 @@ export default function ChildminderDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Childminder Dashboard</h1>
-          <div className="flex space-x-2">
-            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-              <CheckCircle className="w-4 h-4 mr-1" /> Garda Vetted
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-7xl mx-auto p-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
+              <AvatarImage src={user?.imageUrl} />
+              <AvatarFallback>CM</AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Welcome back, {user?.firstName}
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400">
+                Manage your childminding services and bookings
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-3 py-1">
+              <Shield className="w-4 h-4 mr-1" /> Garda Vetted
             </Badge>
-            <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+            <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 px-3 py-1">
               <CheckCircle className="w-4 h-4 mr-1" /> Tusla Registered
+            </Badge>
+            <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 px-3 py-1">
+              <Star className="w-4 h-4 mr-1" /> Premium Member
             </Badge>
           </div>
         </div>
@@ -228,18 +272,19 @@ export default function ChildminderDashboard() {
           {quickStatsConfig.map((stat, index) => (
             <AnimatedCard 
               key={index}
-              className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-              whileHover={{ scale: 1.05 }}
+              className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700"
+              whileHover={{ scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
-              <CardContent className="p-6">
+              <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${stat.gradient}`} />
+              <CardContent className="p-6 relative">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-indigo-100 dark:bg-indigo-900 rounded-full">
-                    <stat.icon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
+                  <div className={`p-3 rounded-lg bg-gradient-to-br ${stat.gradient}`}>
+                    <stat.icon className="h-6 w-6 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                  <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
                     {stat.key === 'hourlyRate' ? `${stat.prefix}${quickStats[stat.key]}` : quickStats[stat.key]}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
@@ -249,154 +294,148 @@ export default function ChildminderDashboard() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-100 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Today's Schedule</span>
-                <Button variant="ghost" size="sm">View Full Schedule</Button>
-              </CardTitle>
+              <CardTitle>Today's Schedule</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {todaySchedule.length === 0 ? (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No bookings scheduled for today</p>
-                ) : (
-                  todaySchedule.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Clock className="h-10 w-10 text-indigo-500" />
+              <ScrollArea className="h-[400px] pr-4">
+                {todaySchedule.map((booking, index) => (
+                  <div
+                    key={booking.id}
+                    className="flex items-center justify-between p-4 rounded-lg mb-3 bg-gray-50 dark:bg-gray-700"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900">
+                        <Clock className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">{booking.child}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{booking.time}</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-100">
+                      Scheduled
+                    </Badge>
+                  </div>
+                ))}
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-100 dark:border-gray-700">
+            <CardHeader>
+              <CardTitle>Pending Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px] pr-4">
+                {pendingRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="p-4 rounded-lg mb-3 bg-gray-50 dark:bg-gray-700"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{request.parent[0]}</AvatarFallback>
+                        </Avatar>
                         <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">{booking.child}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Parent: {booking.parent}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{booking.time}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{request.parent}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{request.date}</p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">Details</Button>
                     </div>
-                  ))
-                )}
-              </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="w-full bg-green-600 hover:bg-green-700"
+                        onClick={() => handleAcceptBooking(request.id)}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full text-red-600 border-red-600 hover:bg-red-50"
+                        onClick={() => handleDeclineBooking(request.id)}
+                      >
+                        Decline
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </ScrollArea>
             </CardContent>
-          </AnimatedCard>
+          </Card>
+        </div>
 
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <Card className="bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-100 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Pending Requests</span>
-                <Button variant="ghost" size="sm">View All</Button>
-              </CardTitle>
+              <CardTitle>Recent Reviews</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {pendingRequests.length === 0 ? (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No pending booking requests</p>
-                ) : (
-                  pendingRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Users className="h-10 w-10 text-indigo-500" />
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">{request.child}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Parent: {request.parent}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">{request.date} • {request.time}</p>
-                        </div>
+              <ScrollArea className="h-[300px] pr-4">
+                {recentReviews.map((review) => (
+                  <div
+                    key={review.id}
+                    className="p-4 rounded-lg mb-3 bg-gray-50 dark:bg-gray-700"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{review.parent[0]}</AvatarFallback>
+                        </Avatar>
+                        <p className="font-medium text-gray-900 dark:text-white">{review.parent}</p>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleAcceptBooking(request.id)}>
-                          <CheckCircle className="w-4 h-4 mr-1" /> Accept
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeclineBooking(request.id)}>
-                          <XCircle className="w-4 h-4 mr-1" /> Decline
-                        </Button>
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < review.rating
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                    <p className="text-gray-600 dark:text-gray-300">{review.comment}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{review.date}</p>
+                  </div>
+                ))}
+              </ScrollArea>
             </CardContent>
-          </AnimatedCard>
+          </Card>
 
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
+          <Card className="bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-100 dark:border-gray-700">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Recent Reviews</span>
-                <Button variant="ghost" size="sm">View All Reviews</Button>
-              </CardTitle>
+              <CardTitle>Recent Messages</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentReviews.length === 0 ? (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No reviews yet</p>
-                ) : (
-                  recentReviews.map((review) => (
-                    <div key={review.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-gray-900 dark:text-white">{review.parent}</p>
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{review.comment}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{review.date}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard 
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Messages</span>
-                <Button variant="ghost" size="sm">View All</Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentMessages.length === 0 ? (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No messages yet</p>
-                ) : (
-                  recentMessages.map((message) => (
-                    <div key={message.id} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <Avatar>
+              <ScrollArea className="h-[300px] pr-4">
+                {recentMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className="p-4 rounded-lg mb-3 bg-gray-50 dark:bg-gray-700"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <Avatar className="h-8 w-8">
                         <AvatarFallback>{message.sender[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <p className="font-semibold text-gray-900 dark:text-white">{message.sender}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{message.message}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">{message.time}</p>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">{message.sender}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{message.time}</p>
                       </div>
-                      <Button variant="outline" size="sm">Reply</Button>
                     </div>
-                  ))
-                )}
-              </div>
+                    <p className="text-gray-600 dark:text-gray-300 pl-11">{message.message}</p>
+                  </div>
+                ))}
+              </ScrollArea>
             </CardContent>
-          </AnimatedCard>
+          </Card>
         </div>
       </div>
     </div>
