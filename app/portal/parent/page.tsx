@@ -214,7 +214,7 @@ export default function ParentDashboard() {
           {quickStats.map((stat, index) => (
             <AnimatedCard 
               key={index}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+              className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
               whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -222,13 +222,13 @@ export default function ParentDashboard() {
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-xl shadow-inner">
+                  <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
                     <stat.icon className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
                   </div>
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{stat.title}</p>
                 </div>
               </CardContent>
             </AnimatedCard>
@@ -237,7 +237,7 @@ export default function ParentDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <AnimatedCard 
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -284,7 +284,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard 
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -329,7 +329,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard 
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -371,7 +371,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard 
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -419,7 +419,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard 
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
+            className="bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 dark:border-gray-700/30"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
