@@ -405,38 +405,36 @@ export default function ParentDashboard() {
             className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
             whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
           >
             <CardHeader className="border-b border-gray-100 dark:border-gray-700">
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Bell className="h-5 w-5 text-purple-500" />
-                  <span>Notifications</span>
+                  <span>Recent Notifications</span>
                 </div>
-                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/notifications'}>View All</Button>
+                <Button variant="ghost" size="sm" className="hover:bg-purple-50 dark:hover:bg-purple-900" onClick={() => window.location.href = '/portal/parent/notifications'}>View All</Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="space-y-4 max-h-[300px] overflow-y-auto">
-                {notifications.map((notification) => (
-                  <div key={notification.id} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/50 dark:to-indigo-900/50 rounded-xl shadow-sm">
-                    <div className="p-2 bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900 dark:to-indigo-900 rounded-full">
-                      {notification.type === 'system' && <Bell className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
-                      {notification.type === 'booking' && <CalendarDays className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
-                      {notification.type === 'subscription' && <Star className="h-4 w-4 text-purple-600 dark:text-purple-300" />}
+              <div className="space-y-4">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">No new notifications</div>
+                ) : (
+                  notifications.slice(0, 3).map((notification) => (
+                    <div key={notification.id} className="flex items-start space-x-4">
+                      <div className="p-2 bg-purple-50 dark:bg-purple-900/50 rounded-lg">
+                        <Bell className="h-4 w-4 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm text-gray-900 dark:text-white">{notification.message}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray-400" />
-                  </div>
-                ))}
-                {notifications.length === 0 && (
-                  <div className="text-center py-4 text-gray-500">No notifications</div>
+                  ))
                 )}
               </div>
             </CardContent>
