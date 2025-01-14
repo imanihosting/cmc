@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
 
     // Calculate stats
     const totalBookings = dbUser.childminderBookings.length;
-    const activeChildren = dbUser.childminderBookings.filter(b => b.status === 'accepted').length;
     const rating = dbUser.childminderReviews.length > 0 
       ? dbUser.childminderReviews.reduce((acc: number, review: { rating: number }) => acc + review.rating, 0) / dbUser.childminderReviews.length 
       : 0;
@@ -38,8 +37,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       totalBookings,
-      activeChildren,
       rating,
+      profile: 'View Profile',
       hourlyRate
     });
 

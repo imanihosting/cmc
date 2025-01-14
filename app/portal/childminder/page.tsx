@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion } from "framer-motion";
 import { 
   CheckCircle, XCircle, Star, Clock, Users, Calendar as CalendarIcon, 
-  DollarSign, TrendingUp, Bell, MessageSquare, Shield
+  DollarSign, TrendingUp, Bell, MessageSquare, Shield, User
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
@@ -24,10 +24,10 @@ import { cn } from "@/lib/utils";
 
 // Interfaces
 interface QuickStats {
-  [key: string]: number;
+  [key: string]: number | string;
   totalBookings: number;
-  activeChildren: number;
   rating: number;
+  profile: string;
   hourlyRate: number;
 }
 
@@ -68,34 +68,35 @@ interface Message {
 const AnimatedCard = motion(Card);
 
 // Enhanced quick stats configuration
-const quickStatsConfig: QuickStat[] = [
-  { 
-    title: "Total Bookings", 
-    key: "totalBookings", 
+const quickStatsConfig = [
+  {
+    title: "Total Bookings",
+    key: "totalBookings",
     icon: CalendarIcon,
     gradient: "from-blue-600 to-blue-400",
     href: "/portal/childminder/bookings"
   },
-  { 
-    title: "Active Children", 
-    key: "activeChildren", 
-    icon: Users,
-    gradient: "from-green-600 to-green-400",
-    href: "/portal/childminder/children"
-  },
-  { 
-    title: "Rating", 
-    key: "rating", 
+  {
+    title: "Rating",
+    key: "rating",
     icon: Star,
     gradient: "from-yellow-600 to-yellow-400",
+    prefix: "",
     href: "/portal/childminder/reviews"
   },
-  { 
-    title: "Hourly Rate", 
-    key: "hourlyRate", 
-    icon: DollarSign, 
-    prefix: "€",
+  {
+    title: "Profile",
+    key: "profile",
+    icon: User,
     gradient: "from-purple-600 to-purple-400",
+    href: "/portal/childminder/profile"
+  },
+  {
+    title: "Hourly Rate",
+    key: "hourlyRate",
+    icon: DollarSign,
+    gradient: "from-emerald-600 to-emerald-400",
+    prefix: "€",
     href: "/portal/childminder/settings"
   }
 ];
@@ -107,8 +108,8 @@ export default function ChildminderDashboard() {
   // State for dashboard data
   const [quickStats, setQuickStats] = useState<QuickStats>({
     totalBookings: 0,
-    activeChildren: 0,
     rating: 0,
+    profile: 'View Profile',
     hourlyRate: 0
   });
   
@@ -173,7 +174,12 @@ export default function ChildminderDashboard() {
       const response = await fetch('/api/childminder/stats');
       if (response.ok) {
         const data = await response.json();
-        setQuickStats(data);
+        setQuickStats({
+          totalBookings: data.totalBookings || 0,
+          rating: data.rating || 0,
+          profile: 'View Profile',
+          hourlyRate: data.hourlyRate || 0
+        });
       }
     } catch (error) {
       console.error('Error fetching quick stats:', error);
@@ -303,6 +309,14 @@ export default function ChildminderDashboard() {
             <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100 px-3 py-1">
               <Star className="w-4 h-4 mr-1" /> Premium Member
             </Badge>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+              onClick={() => router.push('/portal/childminder/messages')}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Messages
+            </Button>
           </div>
         </div>
 
@@ -324,7 +338,11 @@ export default function ChildminderDashboard() {
                 </div>
                 <div>
                   <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                    {stat.key === 'hourlyRate' ? `${stat.prefix}${quickStats[stat.key]}` : quickStats[stat.key]}
+                    {stat.key === 'hourlyRate' 
+                      ? `${stat.prefix}${quickStats[stat.key]}`
+                      : stat.key === 'profile'
+                        ? quickStats[stat.key]
+                        : quickStats[stat.key]}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
                 </div>
@@ -447,10 +465,14 @@ export default function ChildminderDashboard() {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback>{request.parent[0]}</AvatarFallback>
+                            <AvatarFallback>
+                              {request.parent && request.parent.length > 0 ? request.parent[0] : 'U'}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{request.parent}</p>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {request.parent || 'Unknown Parent'}
+                            </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">{request.date}</p>
                           </div>
                         </div>
@@ -495,9 +517,13 @@ export default function ChildminderDashboard() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback>{review.parent[0]}</AvatarFallback>
+                          <AvatarFallback>
+                            {review.parent && review.parent.length > 0 ? review.parent[0] : 'U'}
+                          </AvatarFallback>
                         </Avatar>
-                        <p className="font-medium text-gray-900 dark:text-white">{review.parent}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {review.parent || 'Unknown Parent'}
+                        </p>
                       </div>
                       <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
@@ -533,10 +559,14 @@ export default function ChildminderDashboard() {
                   >
                     <div className="flex items-center gap-3 mb-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>{message.sender[0]}</AvatarFallback>
+                        <AvatarFallback>
+                          {message.sender && message.sender.length > 0 ? message.sender[0] : 'U'}
+                        </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{message.sender}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {message.sender || 'Unknown Sender'}
+                        </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{message.time}</p>
                       </div>
                     </div>

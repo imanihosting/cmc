@@ -1,64 +1,110 @@
-import { NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import prisma from '@/lib/prisma';
-import { NextRequest } from 'next/server';
-import { formatDistanceToNow } from 'date-fns';
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const { userId } = getAuth(req);
-    
+    const { userId } = await auth();
+
     if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Get user from database
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      select: {
-        id: true,
-        role: true
-      }
+    // Get the childminder's ID
+    const user = await prisma.user.findFirst({
+      where: {
+        clerkId: userId,
+        role: Role.childminder,
+      },
     });
 
-    if (!dbUser) {
-      return new NextResponse('User not found', { status: 404 });
+    if (!user) {
+      return new NextResponse("Not found", { status: 404 });
     }
 
-    if (dbUser.role !== 'childminder') {
-      return new NextResponse('Forbidden', { status: 403 });
-    }
-
-    // Get recent messages
-    const messages = await prisma.message.findMany({
+    // Get all conversations with messages and parent details
+    const conversations = await prisma.conversation.findMany({
       where: {
-        receiverId: dbUser.id
+        childminderId: user.id,
       },
       include: {
-        sender: {
+        parent: {
           select: {
-            name: true
-          }
-        }
+            name: true,
+            profilePicture: true,
+          },
+        },
+        messages: {
+          orderBy: {
+            sentAt: 'asc',
+          },
+        },
       },
       orderBy: {
-        sentAt: 'desc'
+        startedAt: 'desc',
       },
-      take: 5
     });
 
-    // Format messages for response
-    const formattedMessages = messages.map(message => ({
-      id: message.id,
-      sender: message.sender.name,
-      message: message.content,
-      time: formatDistanceToNow(message.sentAt, { addSuffix: true })
-    }));
-
-    return NextResponse.json(formattedMessages);
-
+    return NextResponse.json(conversations);
   } catch (error) {
-    console.error('[CHILDMINDER_MESSAGES]', error);
-    return new NextResponse('Internal error', { status: 500 });
+    console.error("[CHILDMINDER_MESSAGES_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const values = await req.json();
+    const { conversationId, content, receiverId } = values;
+
+    if (!conversationId || !content || !receiverId) {
+      return new NextResponse("Missing required fields", { status: 400 });
+    }
+
+    // Get the childminder's ID
+    const user = await prisma.user.findFirst({
+      where: {
+        clerkId: userId,
+        role: Role.childminder,
+      },
+    });
+
+    if (!user) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+
+    // Verify the conversation belongs to this childminder
+    const conversation = await prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        childminderId: user.id,
+      },
+    });
+
+    if (!conversation) {
+      return new NextResponse("Conversation not found", { status: 404 });
+    }
+
+    // Create the message
+    const message = await prisma.message.create({
+      data: {
+        conversationId,
+        senderId: user.id,
+        receiverId,
+        content,
+      },
+    });
+
+    return NextResponse.json(message);
+  } catch (error) {
+    console.error("[CHILDMINDER_MESSAGES_POST]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 } 

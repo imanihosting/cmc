@@ -297,9 +297,28 @@ export default function ChildminderProfile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-blue-800 dark:text-blue-200">
-                €{profile.hourlyRate || '0'}/hr
-              </p>
+              {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  <span className="text-2xl font-bold text-blue-800 dark:text-blue-200">€</span>
+                  <Input
+                    type="number"
+                    value={editedProfile?.hourlyRate || ''}
+                    onChange={(e) => setEditedProfile({
+                      ...editedProfile!,
+                      hourlyRate: e.target.value ? parseFloat(e.target.value) : null
+                    })}
+                    className="bg-white/50 dark:bg-white/10 border-0 text-2xl font-bold text-blue-800 dark:text-blue-200 w-24"
+                    placeholder="0"
+                    min="0"
+                    step="0.50"
+                  />
+                  <span className="text-2xl font-bold text-blue-800 dark:text-blue-200">/hr</span>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-blue-800 dark:text-blue-200">
+                  €{profile.hourlyRate || '0'}/hr
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -310,9 +329,27 @@ export default function ChildminderProfile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-purple-800 dark:text-purple-200">
-                {profile.availabilityRadius || 0}km
-              </p>
+              {isEditing ? (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="number"
+                    value={editedProfile?.availabilityRadius || ''}
+                    onChange={(e) => setEditedProfile({
+                      ...editedProfile!,
+                      availabilityRadius: e.target.value ? parseInt(e.target.value) : 0
+                    })}
+                    className="bg-white/50 dark:bg-white/10 border-0 text-2xl font-bold text-purple-800 dark:text-purple-200 w-24"
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                  />
+                  <span className="text-2xl font-bold text-purple-800 dark:text-purple-200">km</span>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-purple-800 dark:text-purple-200">
+                  {profile.availabilityRadius || 0}km
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -323,9 +360,41 @@ export default function ChildminderProfile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-green-800 dark:text-green-200">
-                {profile.languagesSpoken?.length || 0}
-              </p>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Input
+                    value={editedProfile?.languagesSpoken?.join(', ') || ''}
+                    onChange={(e) => setEditedProfile({
+                      ...editedProfile!,
+                      languagesSpoken: e.target.value.split(',').map(lang => lang.trim()).filter(Boolean)
+                    })}
+                    className="bg-white/50 dark:bg-white/10 border-0 text-lg font-medium text-green-800 dark:text-green-200"
+                    placeholder="English, Irish, etc."
+                  />
+                  <p className="text-xs text-green-700 dark:text-green-300">
+                    Separate languages with commas
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-3xl font-bold text-green-800 dark:text-green-200 mb-2">
+                    {profile.languagesSpoken?.length || 0}
+                  </p>
+                  {profile.languagesSpoken && profile.languagesSpoken.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {profile.languagesSpoken.map((lang, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-green-200/50 text-green-800 dark:bg-green-800/50 dark:text-green-100"
+                        >
+                          {lang}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
