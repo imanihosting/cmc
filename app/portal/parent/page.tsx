@@ -221,16 +221,16 @@ export default function ParentDashboard() {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
-            onClick={() => window.location.href = '/portal/parent/profile'}
+            onClick={() => handleCardClick('/portal/parent/profile')}
           >
             <UserCircle className="w-4 h-4" />
             View Profile
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnimatedCard
-            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
             onClick={() => handleCardClick('/portal/bookings')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -250,7 +250,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard
-            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
             onClick={() => handleCardClick('/portal/messages')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -270,7 +270,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard
-            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
             onClick={() => handleCardClick('/portal/notifications')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -290,7 +290,7 @@ export default function ParentDashboard() {
           </AnimatedCard>
 
           <AnimatedCard
-            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
+            className="bg-white/30 backdrop-blur-lg shadow-lg rounded-xl overflow-hidden border border-white/30 cursor-pointer hover:shadow-xl transition-all duration-300"
             onClick={() => handleCardClick('/portal/children')}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -305,26 +305,6 @@ export default function ParentDashboard() {
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{children.length}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">Children Profiles</p>
-              </div>
-            </CardContent>
-          </AnimatedCard>
-
-          <AnimatedCard
-            className="bg-white/30 backdrop-blur-lg shadow-xl rounded-xl overflow-hidden border border-white/30 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-1"
-            onClick={() => handleCardClick('/portal/parent/profile')}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm rounded-xl shadow-inner">
-                  <UserCircle className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{user?.firstName || user?.username}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">View Profile</p>
               </div>
             </CardContent>
           </AnimatedCard>
