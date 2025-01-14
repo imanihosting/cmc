@@ -43,6 +43,18 @@ interface Notification {
   createdAt: string
 }
 
+interface Conversation {
+  id: number
+  participant: {
+    id: number
+    name: string
+    profilePicture?: string
+    clerkId: string
+  }
+  lastMessage?: Message
+  unreadCount: number
+}
+
 const AnimatedCard = motion(Card)
 
 export default function ParentDashboard() {
@@ -51,6 +63,7 @@ export default function ParentDashboard() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [children, setChildren] = useState<Child[]>([])
   const [messages, setMessages] = useState<Message[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +75,19 @@ export default function ParentDashboard() {
       try {
         setIsLoading(true)
         
+        // Fetch conversations
+        const conversationsRes = await fetch('/api/conversations')
+        if (!conversationsRes.ok) {
+          throw new Error('Failed to fetch conversations')
+        }
+        const conversationsData = await conversationsRes.json()
+        if (Array.isArray(conversationsData)) {
+          setConversations(conversationsData)
+        } else {
+          console.error('Conversations data is not an array:', conversationsData)
+          setConversations([])
+        }
+
         // Fetch bookings
         const bookingsRes = await fetch('/api/bookings')
         const bookingsData = await bookingsRes.json()
@@ -82,25 +108,16 @@ export default function ParentDashboard() {
           setChildren([])
         }
 
-        // Fetch conversations first
-        const conversationsRes = await fetch('/api/conversations')
-        const conversationsData = await conversationsRes.json()
-        
-        if (Array.isArray(conversationsData)) {
-          // Fetch messages for each conversation
-          const allMessages: Message[] = []
-          for (const conversation of conversationsData) {
-            const messagesRes = await fetch(`/api/messages?conversationId=${conversation.id}`)
-            const messagesData = await messagesRes.json()
-            if (Array.isArray(messagesData)) {
-              allMessages.push(...messagesData)
-            }
+        // Fetch messages for each conversation
+        const allMessages: Message[] = []
+        for (const conversation of conversationsData) {
+          const messagesRes = await fetch(`/api/messages?conversationId=${conversation.id}`)
+          const messagesData = await messagesRes.json()
+          if (Array.isArray(messagesData)) {
+            allMessages.push(...messagesData)
           }
-          setMessages(allMessages)
-        } else {
-          console.error('Conversations data is not an array:', conversationsData)
-          setMessages([])
         }
+        setMessages(allMessages)
 
         // Fetch notifications
         const notificationsRes = await fetch('/api/notifications')
@@ -121,10 +138,10 @@ export default function ParentDashboard() {
       } catch (err) {
         console.error('Error fetching dashboard data:', err)
         setError('Failed to load dashboard data')
-        // Initialize empty arrays on error
         setBookings([])
         setChildren([])
         setMessages([])
+        setConversations([])
         setNotifications([])
       } finally {
         setIsLoading(false)
@@ -170,7 +187,7 @@ export default function ParentDashboard() {
   const quickStats = [
     { title: 'Active Bookings', value: bookings.filter(b => b.status === 'accepted').length, icon: BookOpen },
     { title: 'Registered Children', value: children.length, icon: Users },
-    { title: 'Unread Messages', value: messages.filter(m => !m.read).length, icon: Mail },
+    { title: 'Unread Messages', value: conversations.reduce((acc: number, conv: Conversation) => acc + conv.unreadCount, 0), icon: Mail },
     { title: 'Reviews Given', value: bookings.filter(b => b.status === 'completed').length, icon: Star },
   ]
 
